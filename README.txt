@@ -9,7 +9,7 @@ fiverx-fetch-prescriptions
 ==========================
 
 Benutzung:
-$ fiverx-fetch-prescriptions [--config=CONFIG] [--since SINCE] export_dir
+$ fiverx-fetch-prescriptions [--config=fiverx.ini] [--since SINCE] export_dir
 
 Dieses Skript ruft die auf dem Server gespeicherten fiverx-Daten ab und
 erstellt automatisch ein Unterverzeichnis des angebenen Export-Ordners.
@@ -26,5 +26,7 @@ angegebenen Datum (im obigen Beispiel der 1. Oktober 2015) liegt und deren
 Status VOR_ABRECHNUNG ist.
 
 Die Konfiguration (Zugangsdaten, URL des Webservices) wird aus der angegebenen
-Konfigurationsdatei gelesen (siehe auch "fiverx.ini.sample").
+Konfigurationsdatei gelesen (siehe auch "fiverx.ini.sample"). Falls der
+"--config"-Parameter beim Aufruf nicht angegeben wurde, verwendet das Programm
+standardmäßig die Datei "fiverx.ini" aus dem aktuellen Verzeichnis.
 

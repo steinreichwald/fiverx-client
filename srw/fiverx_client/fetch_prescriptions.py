@@ -80,7 +80,7 @@ def fetch(export_dir, settings, since=None):
 
 def main():
     parser = ArgumentParser(description='export prescription data from srw.link service.')
-    parser.add_argument('--config', dest='config_filename', default='fetch.ini')
+    parser.add_argument('--config', dest='config_filename', default='fiverx.ini')
     parser.add_argument('--since', dest='since')
     parser.add_argument('export_dir')
     
