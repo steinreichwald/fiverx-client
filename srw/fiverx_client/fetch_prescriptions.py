@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 
+from __future__ import division, absolute_import, print_function, unicode_literals
+
 from argparse import ArgumentParser
-from ConfigParser import SafeConfigParser
+try:
+    from configparser import SafeConfigParser
+except ImportError:
+    from ConfigParser import SafeConfigParser
 from datetime import datetime as DateTime
 import os
 import time
@@ -63,7 +68,7 @@ def fetch(export_dir, settings, since=None):
     
     response = requests.post(url, auth=HTTPBasicAuth(user, password))
     if response.status_code != 200:
-        print 'Error while fetching data: %r (code: %r)' % (response.text, response.status_code)
+        print('Error while fetching data: %r (code: %r)' % (response.text, response.status_code))
         return
     results = response.json()
     
