@@ -1,0 +1,7 @@
+fiverx.ini
+submission.ini
+*.pyc
+*.egg-info
+.project
+.pydevproject
+.settings
