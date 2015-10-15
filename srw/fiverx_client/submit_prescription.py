@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from __future__ import division, absolute_import, print_function, unicode_literals
+
 from argparse import ArgumentParser
 from ConfigParser import SafeConfigParser
 from datetime import datetime as DateTime
@@ -77,9 +79,9 @@ def submit(settings, prescription_template):
     
     response = requests.post(url, data=xml)
     if response.status_code != 200:
-        print 'Error while fetching data: %r (code: %r)' % (response.text, response.status_code)
+        print('Error while fetching data: %r (code: %r)' % (response.text, response.status_code))
         return
-    print response.text
+    print(response.text)
 
 
 def main():
