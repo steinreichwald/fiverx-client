@@ -53,7 +53,8 @@ def store_prescription(prescription_data, result_dir):
     filename = '%(id)06d-%(pharmacy_id)s-%(time)s.xml' % (dict(id=id_, pharmacy_id=pharmacy_id, time=now))
     path = os.path.join(result_dir, filename)
     with file(path, 'wb') as fp:
-        fp.write(submission_xml(content_xml))
+        binary_xml = submission_xml(content_xml).encode('utf8')
+        fp.write(binary_xml)
 
 
 def fetch(export_dir, settings, since=None):
