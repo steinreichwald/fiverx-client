@@ -95,7 +95,7 @@ def main():
     config.read(args.config_filename)
     settings = dict(config.items('srw.link'))
     
-    prescription_xml = file(args.prescription_filename).read()
+    prescription_xml = open(args.prescription_filename).read()
     submit(settings, prescription_xml)
 
 if __name__ == '__main__':
