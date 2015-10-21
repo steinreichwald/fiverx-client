@@ -72,15 +72,16 @@ def fetch(export_dir, settings, since=None):
         print('Error while fetching data: %r (code: %r)' % (response.text, response.status_code))
         return
     results = response.json()
+    prescriptions = results['prescriptions']
 
     now = DateTime.now(LOCALTZ)
     # Windows does not like ':' in path names
     pathname = xsd.DateTime().xmlvalue(now).replace(':', '_')
     result_dir = os.path.join(export_dir, pathname)
-    if not os.path.exists(result_dir):
+    if prescriptions and not os.path.exists(result_dir):
         os.makedirs(result_dir)
 
-    for prescription_data in results['prescriptions']:
+    for prescription_data in prescriptions:
         store_prescription(prescription_data, result_dir)
 
 
