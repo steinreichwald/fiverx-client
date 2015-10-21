@@ -49,7 +49,7 @@ def store_prescription(prescription_data, result_dir):
     pharmacy_id = prescription_data['pharmacy_id']
     now = time.time()
     content_xml = prescription_data['content_xml']
-    
+
     filename = '%(id)06d-%(pharmacy_id)s-%(time)s.xml' % (dict(id=id_, pharmacy_id=pharmacy_id, time=now))
     path = os.path.join(result_dir, filename)
     with open(path, 'wb') as fp:
@@ -61,25 +61,25 @@ def fetch(export_dir, settings, since=None):
     base_url = settings['url']
     user = settings['username']
     password = settings['password']
-    
+
     path = '/internal/export-prescriptions/'
     url = base_url + path
     if since:
         url += xsd.DateTime().xmlvalue(since)
-    
+
     response = requests.post(url, auth=HTTPBasicAuth(user, password))
     if response.status_code != 200:
         print('Error while fetching data: %r (code: %r)' % (response.text, response.status_code))
         return
     results = response.json()
-    
+
     now = DateTime.now(LOCALTZ)
     # Windows does not like ':' in path names
     pathname = xsd.DateTime().xmlvalue(now).replace(':', '_')
     result_dir = os.path.join(export_dir, pathname)
     if not os.path.exists(result_dir):
         os.makedirs(result_dir)
-    
+
     for prescription_data in results['prescriptions']:
         store_prescription(prescription_data, result_dir)
 
@@ -89,17 +89,17 @@ def main():
     parser.add_argument('--config', dest='config_filename', default='fiverx.ini')
     parser.add_argument('--since', dest='since')
     parser.add_argument('export_dir')
-    
+
     args = parser.parse_args()
-    
+
     config = SafeConfigParser()
     config.read(args.config_filename)
     settings = dict(config.items('srw.link'))
-    
+
     since = None
     if args.since:
         since = xsd.DateTime().pythonvalue(args.since)
-    
+
     fetch(args.export_dir, settings, since)
 
 if __name__ == '__main__':
