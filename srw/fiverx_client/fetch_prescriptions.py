@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 from __future__ import division, absolute_import, print_function, unicode_literals
 
@@ -9,12 +10,15 @@ except ImportError:
     from ConfigParser import SafeConfigParser
 from datetime import datetime as DateTime
 import os
+import sys
 import time
 
 from babel.util import LOCALTZ
 from soapfish import xsd
 import requests
 from requests.auth import HTTPBasicAuth
+
+from srw.fiverx_client.logging_utilities import build_logger
 
 
 def submission_xml(prescription_xml):
@@ -58,6 +62,8 @@ def store_prescription(prescription_data, result_dir):
 
 
 def fetch(export_dir, settings, since=None):
+    logging_base = os.path.join(os.getcwd(), os.path.basename(sys.argv[0]))
+    log = build_logger(logging_base)
     base_url = settings['url']
     user = settings['username']
     password = settings['password']
@@ -67,6 +73,7 @@ def fetch(export_dir, settings, since=None):
     if since:
         url += xsd.DateTime().xmlvalue(since)
 
+    log.info('Hole neue Rezepte vom Server')
     response = requests.post(url, auth=HTTPBasicAuth(user, password))
     if response.status_code != 200:
         print('Error while fetching data: %r (code: %r)' % (response.text, response.status_code))
@@ -81,8 +88,10 @@ def fetch(export_dir, settings, since=None):
     if prescriptions and not os.path.exists(result_dir):
         os.makedirs(result_dir)
 
+    log.info('Speichere %d Rezepte' % len(prescriptions))
     for prescription_data in prescriptions:
         store_prescription(prescription_data, result_dir)
+    log.info('Rezepte gespeichert')
 
 
 def main():
