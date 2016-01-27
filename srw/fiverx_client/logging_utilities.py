@@ -26,9 +26,9 @@ def configure_logging(log_filename, logger_name):
     ch.setLevel(logging.INFO)
 
     # create formatter and add it to the handlers
-#    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 #    formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
-    formatter = logging.Formatter('[%(levelname)s] %(message)s')
+#    formatter = logging.Formatter('[%(levelname)s] %(message)s')
     ch.setFormatter(formatter)
     fh.setFormatter(formatter)
 
