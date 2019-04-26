@@ -2,7 +2,7 @@
 srwlink-client
 
 Usage:
-  srwlink-client [--config=<config>] ladeRzVersion [--chunked]
+  srwlink-client [--config=<config>] (ladeRzVersion|ladeRzDienste) [--chunked]
   srwlink-client -h --help
 """
 
@@ -13,7 +13,7 @@ import sys
 from docopt import docopt
 from lxml import etree
 
-from .soapclient import extract_response_payload, ladeRzVersion, send_request
+from .soapclient import extract_response_payload, ladeRzDienste, ladeRzVersion, send_request
 
 
 __all__ = ['client_main']
@@ -35,9 +35,13 @@ def run_command(settings, arguments):
         'apoik': _s['soap_apoik'],
     }
 
-    if arguments['ladeRzVersion']:
-        soap_xml = ladeRzVersion.build_soap_xml(header_params)
-        payload_xpath = ladeRzVersion.response_payload_xpath
+    for module in (ladeRzVersion, ladeRzDienste):
+        command = module.__name__.rsplit('.', 1)[-1]
+        if arguments[command]:
+            soap_builder = getattr(module, 'build_soap_xml')
+            soap_xml = soap_builder(header_params)
+            payload_xpath = getattr(module, 'response_payload_xpath')
+            break
     else:
         raise AssertionError('unexpected command')
     response = send_request(ws_url, soap_xml, use_chunking)

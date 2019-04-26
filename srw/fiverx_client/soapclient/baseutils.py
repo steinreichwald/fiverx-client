@@ -29,12 +29,22 @@ sendHeader_template = '''
 def sendHeader_xml(**kwargs):
     return sendHeader_template % kwargs
 
+rzeParamVersion_xml = '''
+<?xml version="1.0" encoding="ISO-8859-15"?>
+<rzeParamVersion xmlns="http://fiverx.de/spec/abrechnungsservice">
+    <versionNr>01.08</versionNr>
+</rzeParamVersion>
+'''.strip()
+
+def _escape_xml(xml):
+    return xml.replace('<', '&lt;').replace('>', '&gt;')
 
 def assemble_soap_xml(soap_template, payload_xml, minimized=False):
     if minimized:
         payload_xml = minimize_xml(payload_xml)
-    payload_str = payload_xml.replace('<', '&lt;').replace('>', '&gt;')
-    soap_xml = soap_template.strip() % {'payload': payload_str}
+    payload_str = _escape_xml(payload_xml)
+    version_str = _escape_xml(rzeParamVersion_xml)
+    soap_xml = soap_template.strip() % {'payload': payload_str, 'rze_param_version': version_str}
 
     # validate XML
     try:
