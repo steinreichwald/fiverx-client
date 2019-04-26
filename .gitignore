@@ -5,3 +5,5 @@ submission.ini
 .project
 .pydevproject
 .settings
+venv
+venv.py3?
