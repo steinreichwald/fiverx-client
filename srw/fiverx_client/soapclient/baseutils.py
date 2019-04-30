@@ -87,4 +87,7 @@ def extract_response_payload(root, xpath):
     }
     matched_elements = root.xpath(xpath, namespaces=namespaces)
     payload_str = matched_elements[0].text
+    if payload_str:
+        # lxml will complain when loading a string with XML encoding declaration
+        payload_str = payload_str.replace('<?xml version="1.0" encoding="utf-8"?>', '')
     return payload_str
