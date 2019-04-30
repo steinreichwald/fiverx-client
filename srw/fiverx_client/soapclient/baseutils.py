@@ -22,6 +22,7 @@ sendHeader_template = '''
         <vs>1.0</vs>
     </avsSw>
     <apoIk>%(apoik)s</apoIk>
+    <test>%(test)s</test>
     <pw>%(password)s</pw>
 </sendHeader>
 '''

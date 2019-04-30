@@ -10,6 +10,7 @@ Options:
   --chunked        Use chunked HTTP requests
   --config=<config> Specify config file
   -h, --help       Show this screen
+  --test           Set "test" flag
 
 Subcommands:
     ladeRzVersion
@@ -62,6 +63,7 @@ def client_main(argv=sys.argv):
 
 def run_command(cmd_module, settings, global_args, command_args):
     use_chunking = global_args.pop('--chunked')
+    is_test_request = global_args.pop('--test')
     command_args = parse_command_args(cmd_module.__doc__, command_args, global_args)
 
     _s = settings
@@ -69,6 +71,7 @@ def run_command(cmd_module, settings, global_args, command_args):
         'user': _s['soap_user'],
         'password': _s['soap_password'],
         'apoik': _s['soap_apoik'],
+        'test': 'true' if is_test_request else 'false',
     }
     soap_builder = getattr(cmd_module, 'build_soap_xml')
     soap_xml = soap_builder(header_params, command_args)
