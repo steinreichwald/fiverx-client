@@ -1,51 +1,80 @@
 """
 srwlink-client
 
+Low-level client to send SOAP requests to a fiverx server.
+
 Usage:
-  srwlink-client [--config=<config>] (ladeRzVersion|ladeRzDienste) [--chunked]
-  srwlink-client -h --help
+  srwlink-client [options] <command> [<args>...]
+
+Options:
+  --chunked        Use chunked HTTP requests
+  --config=<config> Specify config file
+  -h, --help       Show this screen
+
+Subcommands:
+    ladeRzVersion
+    ladeRzDienste
 """
 
 from configparser import ConfigParser
 from pathlib import Path
 import sys
 
-from docopt import docopt
+from docopt import docopt, DocoptExit
 from lxml import etree
 
 from .soapclient import extract_response_payload, ladeRzDienste, ladeRzVersion, send_request
-from .utils import pprint_xml
+from .utils import parse_command_args, pprint_xml
 
 
 __all__ = ['client_main']
 
 def client_main(argv=sys.argv):
-    arguments = docopt(__doc__, argv=argv[1:])
+    # options_first=True is important to implement subcommands
+    arguments = docopt(__doc__, argv=argv[1:], options_first=True)
+    _cmd_args = arguments.pop('<args>') or ()
+    # commands should be able to have their own parameters but I want that this
+    # still works:
+    #     srwlink-client --config=... ladeRzDienste --help
+    if '--help' in _cmd_args:
+        docopt(__doc__, ('--help',))
+
     settings = load_settings(arguments)
     if not settings:
         return
-    run_command(settings, arguments)
+    # remove some arguments which are handled by docopt ("--help") or not
+    # needed anymore at this point ("--config") so we only have meaningful
+    # keys in "arguments".
+    del arguments['--config']
+    del arguments['--help']
 
-def run_command(settings, arguments):
-    use_chunking = arguments['--chunked'] or False
-    ws_url = settings['url']
+    cmd_module = None
+    subcommand = arguments.pop('<command>')
+    for module in (ladeRzVersion, ladeRzDienste):
+        command_name = module.__name__.rsplit('.', 1)[-1]
+        is_active_command = (subcommand == command_name)
+        if is_active_command:
+            cmd_module = module
+    if cmd_module is None:
+        raise DocoptExit('unexpected command')
+
+    run_command(cmd_module, settings, arguments, _cmd_args)
+
+def run_command(cmd_module, settings, global_args, command_args):
+    use_chunking = global_args.pop('--chunked')
+    command_args = parse_command_args(cmd_module.__doc__, command_args, global_args)
+
     _s = settings
     header_params = {
         'user': _s['soap_user'],
         'password': _s['soap_password'],
         'apoik': _s['soap_apoik'],
     }
-
-    for module in (ladeRzVersion, ladeRzDienste):
-        command_name = module.__name__.rsplit('.', 1)[-1]
-        if arguments[command_name]:
-            soap_builder = getattr(module, 'build_soap_xml')
-            soap_xml = soap_builder(header_params)
-            payload_xpath = getattr(module, 'response_payload_xpath')
-            break
-    else:
-        raise AssertionError('unexpected command')
+    soap_builder = getattr(cmd_module, 'build_soap_xml')
+    soap_xml = soap_builder(header_params, command_args)
+    ws_url = settings['url']
     response = send_request(ws_url, soap_xml, use_chunking)
+    payload_xpath = getattr(cmd_module, 'response_payload_xpath')
     print_soap_response(response, payload_xpath)
 
 def load_settings(arguments):

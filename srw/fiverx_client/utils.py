@@ -1,8 +1,16 @@
 
+from docopt import docopt
 from lxml import etree
 
 
-__all__ = ['pprint_xml', 'prettify_xml']
+__all__ = ['parse_command_args', 'pprint_xml', 'prettify_xml']
+
+def parse_command_args(doc_str, command_args, global_args):
+    cmd_args = docopt(doc_str, argv=command_args)
+    args = {}
+    args.update(global_args)
+    args.update(cmd_args)
+    return args
 
 def prettify_xml(xml):
     xml_str = xml if isinstance(xml, str) else etree.fromstring(xml)

@@ -1,3 +1,9 @@
+"""
+Lade die vom RZ eingesetzte fiverx-Version.
+
+Usage:
+    ladeRzVersion
+"""
 
 from .baseutils import assemble_soap_xml, sendHeader_xml
 
@@ -6,7 +12,7 @@ __all__ = [
     'build_soap_xml'
 ]
 
-def build_soap_xml(header_params, minimized=False):
+def build_soap_xml(header_params, command_args, minimized=False):
     template = payload_template.lstrip('\n')
     sendHeader = sendHeader_xml(**header_params)
     payload_xml = template % {'sendHeader': sendHeader}
