@@ -37,8 +37,8 @@ def run_command(settings, arguments):
     }
 
     for module in (ladeRzVersion, ladeRzDienste):
-        command = module.__name__.rsplit('.', 1)[-1]
-        if arguments[command]:
+        command_name = module.__name__.rsplit('.', 1)[-1]
+        if arguments[command_name]:
             soap_builder = getattr(module, 'build_soap_xml')
             soap_xml = soap_builder(header_params)
             payload_xpath = getattr(module, 'response_payload_xpath')
