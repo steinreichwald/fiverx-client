@@ -14,6 +14,7 @@ from docopt import docopt
 from lxml import etree
 
 from .soapclient import extract_response_payload, ladeRzDienste, ladeRzVersion, send_request
+from .utils import pprint_xml
 
 
 __all__ = ['client_main']
@@ -86,9 +87,7 @@ def print_soap_response(response, payload_xpath):
     contains_xml = response_body.startswith('<')
     if contains_xml:
         root = etree.fromstring(response_body)
-        #indented_xml = etree.tostring(root, pretty_print=True, encoding='unicode')
-        #print(indented_xml)
         payload_xml_str = extract_response_payload(root, payload_xpath)
-        print(payload_xml_str)
+        pprint_xml(payload_xml_str or response_body)
     else:
         print(response_body)
