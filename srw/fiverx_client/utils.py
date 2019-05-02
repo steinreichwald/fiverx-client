@@ -13,7 +13,7 @@ def parse_command_args(doc_str, command_args, global_args):
     return args
 
 def prettify_xml(xml):
-    xml_str = xml if isinstance(xml, str) else etree.fromstring(xml)
+    xml_str = xml if isinstance(xml, str) else etree.tostring(xml)
     # lxml FAQ: "Why doesn't the pretty_print option reformat my XML output?"
     # https://lxml.de/FAQ.html#why-doesn-t-the-pretty-print-option-reformat-my-xml-output
     parser = etree.XMLParser(remove_blank_text=True)
