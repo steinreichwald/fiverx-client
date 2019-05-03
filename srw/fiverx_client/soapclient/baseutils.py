@@ -1,4 +1,5 @@
 
+import re
 import sys
 
 from lxml import etree
@@ -90,5 +91,6 @@ def extract_response_payload(root, xpath):
     payload_str = matched_elements[0].text
     if payload_str:
         # lxml will complain when loading a string with XML encoding declaration
-        payload_str = payload_str.replace('<?xml version="1.0" encoding="utf-8"?>', '')
+        encoding_pattern = '^<\?xml version="1\.0" encoding="[^"]+"\?>\s*'
+        payload_str = re.sub(encoding_pattern, '', payload_str)
     return payload_str
