@@ -35,7 +35,7 @@ from .soapclient import (
     send_request,
 )
 from .soapclient.payload_validation import validate_payload
-from .utils import parse_command_args, prettify_xml
+from .utils import parse_command_args, prettify_xml, textcolor, TermColor
 
 
 __all__ = ['client_main']
@@ -134,10 +134,13 @@ def print_soap_response(response, payload_xpath):
         root = etree.fromstring(response_body)
         payload_xml_str = extract_response_payload(root, payload_xpath)
         prettified_xml = prettify_xml(payload_xml_str or response_body)
-        is_valid = validate_payload(payload_xml_str or response_body)
-        print(prettified_xml)
-        if not is_valid:
-            print('==> INVALID XML in server response!')
-        return prettified_xml
+        is_valid = validate_payload(prettified_xml)
+        xml_color = TermColor.Fore.GREEN if is_valid else TermColor.Fore.RED
+        with textcolor(xml_color):
+            print(prettified_xml)
+
+        with textcolor(TermColor.Style.BRIGHT + xml_color):
+            if not is_valid:
+                print('==> INVALID XML in server response!')
     else:
         print(response_body)

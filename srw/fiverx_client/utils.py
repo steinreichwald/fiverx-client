@@ -1,9 +1,10 @@
 
 from docopt import docopt
 from lxml import etree
+from soapfish.lib.attribute_dict import AttrDict
 
 
-__all__ = ['parse_command_args', 'pprint_xml', 'prettify_xml']
+__all__ = ['textcolor', 'parse_command_args', 'pprint_xml', 'prettify_xml']
 
 def parse_command_args(doc_str, command_args, global_args):
     cmd_args = docopt(doc_str, argv=command_args)
@@ -24,3 +25,33 @@ def prettify_xml(xml):
 def pprint_xml(xml_str):
     print(prettify_xml(xml_str))
 
+
+# --- colorama utilities -----------------------------------------------------
+from contextlib import contextmanager
+import sys
+
+try:
+    import colorama
+    is_colorama_available = True
+    TermColor = colorama
+except ImportError:
+    colorama = None
+    is_colorama_available = False
+    class TermColor:
+        Fore = AttrDict({'GREEN': None, 'RED': None})
+        Style = AttrDict({'BRIGHT': None})
+
+def is_colorama_initialized():
+    if not is_colorama_available:
+        return False
+    return (colorama.initialise.orig_stdout is not None)
+
+@contextmanager
+def textcolor(color):
+    if not is_colorama_available:
+        return
+    if not is_colorama_initialized():
+        colorama.init()
+    sys.stdout.write(color)
+    yield
+    sys.stdout.write(colorama.Style.RESET_ALL)
