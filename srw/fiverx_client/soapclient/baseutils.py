@@ -1,9 +1,10 @@
 
-import re
 import sys
 
 from lxml import etree
 import requests
+
+from ..utils import strip_xml_encoding
 
 
 __all__ = [
@@ -93,7 +94,5 @@ def extract_response_payload(root, xpath):
     else:
         payload_str = root.text
     if payload_str:
-        # lxml will complain when loading a string with XML encoding declaration
-        encoding_pattern = '^<\?xml version="1\.0" encoding="[^"]+"\?>\s*'
-        payload_str = re.sub(encoding_pattern, '', payload_str)
+        payload_str = strip_xml_encoding(payload_str)
     return payload_str

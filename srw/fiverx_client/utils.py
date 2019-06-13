@@ -1,4 +1,6 @@
 
+import re
+
 from docopt import docopt
 from lxml import etree
 from soapfish.lib.attribute_dict import AttrDict
@@ -10,6 +12,7 @@ __all__ = [
     'pprint_xml',
     'prettify_xml',
     'PREZEPT',
+    'strip_xml_encoding',
     'textcolor',
 ]
 
@@ -25,7 +28,9 @@ def parse_command_args(doc_str, command_args, global_args):
     return args
 
 def prettify_xml(xml):
-    xml_str = xml if isinstance(xml, str) else etree.tostring(xml)
+    if not isinstance(xml, str):
+        xml = etree.tostring(xml)
+    xml_str = strip_xml_encoding(xml)
     # lxml FAQ: "Why doesn't the pretty_print option reformat my XML output?"
     # https://lxml.de/FAQ.html#why-doesn-t-the-pretty-print-option-reformat-my-xml-output
     parser = etree.XMLParser(remove_blank_text=True)
@@ -35,6 +40,12 @@ def prettify_xml(xml):
 
 def pprint_xml(xml_str):
     print(prettify_xml(xml_str))
+
+def strip_xml_encoding(xml_str):
+    # lxml will complain when loading a ("unicode") string with XML encoding declaration
+    if xml_str.startswith('<?xml version='):
+        return re.sub('^.+?\?>\s*', '', xml_str)
+    return xml_str
 
 
 # --- colorama utilities -----------------------------------------------------
