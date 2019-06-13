@@ -34,7 +34,8 @@ from .soapclient import (
     sendeRezepte,
     send_request,
 )
-from .utils import parse_command_args, pprint_xml
+from .soapclient.payload_validation import validate_payload
+from .utils import parse_command_args, prettify_xml
 
 
 __all__ = ['client_main']
@@ -132,6 +133,11 @@ def print_soap_response(response, payload_xpath):
     if contains_xml:
         root = etree.fromstring(response_body)
         payload_xml_str = extract_response_payload(root, payload_xpath)
-        pprint_xml(payload_xml_str or response_body)
+        prettified_xml = prettify_xml(payload_xml_str or response_body)
+        is_valid = validate_payload(payload_xml_str or response_body)
+        print(prettified_xml)
+        if not is_valid:
+            print('==> INVALID XML in server response!')
+        return prettified_xml
     else:
         print(response_body)

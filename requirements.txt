@@ -4,5 +4,6 @@ docopt
 babel
 lxml
 requests
+setuptools
 soapfish >= 0.6dev # changed import locations, e.g. SOAPError
 
