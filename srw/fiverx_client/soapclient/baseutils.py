@@ -88,7 +88,10 @@ def extract_response_payload(root, xpath):
         'fiverx': 'http://fiverx.de/spec/abrechnungsservice/types',
     }
     matched_elements = root.xpath(xpath, namespaces=namespaces)
-    payload_str = matched_elements[0].text
+    if matched_elements:
+        payload_str = matched_elements[0].text
+    else:
+        payload_str = root.text
     if payload_str:
         # lxml will complain when loading a string with XML encoding declaration
         encoding_pattern = '^<\?xml version="1\.0" encoding="[^"]+"\?>\s*'
