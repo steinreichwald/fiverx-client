@@ -15,6 +15,7 @@ Options:
 Subcommands:
     ladeRzVersion
     ladeRzDienste
+    ladeStatusRezept
     pruefeRezept
     sendeRezepte
 """
@@ -30,6 +31,7 @@ from .soapclient import (
     extract_response_payload,
     ladeRzDienste,
     ladeRzVersion,
+    ladeStatusRezept,
     pruefeRezept,
     sendeRezepte,
     send_request,
@@ -62,7 +64,7 @@ def client_main(argv=sys.argv):
     cmd_module = None
     subcommand = arguments.pop('<command>')
     available_subcommands = (
-        ladeRzVersion, ladeRzDienste, pruefeRezept, sendeRezepte,
+        ladeRzVersion, ladeRzDienste, ladeStatusRezept, pruefeRezept, sendeRezepte,
     )
     for module in available_subcommands:
         command_name = module.__name__.rsplit('.', 1)[-1]
