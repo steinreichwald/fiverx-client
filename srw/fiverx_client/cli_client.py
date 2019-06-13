@@ -16,6 +16,7 @@ Subcommands:
     ladeRzVersion
     ladeRzDienste
     pruefeRezept
+    sendeRezepte
 """
 
 from configparser import ConfigParser
@@ -30,6 +31,7 @@ from .soapclient import (
     ladeRzDienste,
     ladeRzVersion,
     pruefeRezept,
+    sendeRezepte,
     send_request,
 )
 from .utils import parse_command_args, pprint_xml
@@ -58,7 +60,10 @@ def client_main(argv=sys.argv):
 
     cmd_module = None
     subcommand = arguments.pop('<command>')
-    for module in (ladeRzVersion, ladeRzDienste, pruefeRezept):
+    available_subcommands = (
+        ladeRzVersion, ladeRzDienste, pruefeRezept, sendeRezepte,
+    )
+    for module in available_subcommands:
         command_name = module.__name__.rsplit('.', 1)[-1]
         is_active_command = (subcommand == command_name)
         if is_active_command:
