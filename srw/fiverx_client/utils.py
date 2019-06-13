@@ -4,7 +4,18 @@ from lxml import etree
 from soapfish.lib.attribute_dict import AttrDict
 
 
-__all__ = ['textcolor', 'parse_command_args', 'pprint_xml', 'prettify_xml']
+__all__ = [
+    'MUSTER16',
+    'parse_command_args',
+    'pprint_xml',
+    'prettify_xml',
+    'PREZEPT',
+    'textcolor',
+]
+
+PREZEPT = 'prezept'
+MUSTER16 = 'muster16'
+
 
 def parse_command_args(doc_str, command_args, global_args):
     cmd_args = docopt(doc_str, argv=command_args)

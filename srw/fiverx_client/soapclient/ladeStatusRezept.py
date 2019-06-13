@@ -3,9 +3,12 @@ Fragt den Status von zuvor eingelieferten Rezepten ab.
 
 Usage:
     ladeStatusRezept lieferung <LIEFERID> [<STATUS>]
+    ladeStatusRezept muster16 <MUSTER16ID>
+    ladeStatusRezept prezept <TRANSAKTIONSNUMMER> <JAHR>
 """
 
 from .baseutils import assemble_soap_xml, sendHeader_xml
+from ..utils import MUSTER16, PREZEPT
 
 
 __all__ = [
@@ -14,11 +17,18 @@ __all__ = [
 
 def build_soap_xml(header_params, command_args, minimized=False):
     per_submission_id = bool(command_args['lieferung'])
+    query_muster16 = bool(command_args['muster16'])
+    query_prezept = bool(command_args['prezept'])
     if per_submission_id:
         submission_id = command_args['<LIEFERID>']
         query_xml = query_perLieferID(submission_id, 'ALLE')
-    else:
-        raise NotImplementedError('on perLieferung is implemented right now')
+    elif query_muster16:
+        muster16_id = command_args['<MUSTER16ID>']
+        query_xml = query_perRezeptID(MUSTER16, muster16_id)
+    elif query_prezept:
+        tid = command_args['<TRANSAKTIONSNUMMER>']
+        year = command_args['<JAHR>']
+        query_xml = query_perRezeptID(PREZEPT, tid, year)
     template = payload_template.strip()
     sendHeader = sendHeader_xml(**header_params)
     payload_xml = template % {'sendHeader': sendHeader, 'query_xml': query_xml}
@@ -33,6 +43,16 @@ def query_perLieferID(submission_id, status):
             <rzLieferId>%s</rzLieferId>
             <rezeptStatus>%s</rezeptStatus>
         </perLieferID>''' % (submission_id, status)
+
+def query_perRezeptID(ptype, document_id, year=None):
+    if ptype == PREZEPT:
+        parameter_xml = '''
+                <transaktionsNummer>%s</transaktionsNummer>
+                <erstellungsJahr>%s</erstellungsJahr>
+        ''' % (document_id, year)
+    else:
+        parameter_xml = '<muster16Id>%s</muster16Id>' % document_id
+    return '<perRezeptID>%s</perRezeptID>' % parameter_xml
 
 
 payload_template = '''
