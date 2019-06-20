@@ -45,7 +45,7 @@ def client_main(argv=sys.argv):
     # still works:
     #     srwlink-client --config=... ladeRzDienste --help
     if '--help' in _cmd_args:
-        docopt(__doc__, ('--help',))
+        docopt(client_doc, ('--help',))
 
     settings = load_settings(arguments)
     if not settings:
