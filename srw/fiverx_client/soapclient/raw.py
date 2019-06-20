@@ -18,3 +18,5 @@ def build_soap_xml(header_params, command_args, minimized=False):
         soap_xml = xml_fp.read().decode('utf8')
     return soap_xml
 
+response_payload_xpath = '//fiverx:*/result'
+
