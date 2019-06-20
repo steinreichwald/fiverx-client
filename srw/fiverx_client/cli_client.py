@@ -85,7 +85,7 @@ def run_command(cmd_module, settings, global_args, command_args):
     soap_xml = soap_builder(header_params, command_args)
     ws_url = settings['url']
     response = soapclient.send_request(ws_url, soap_xml, use_chunking)
-    payload_xpath = getattr(cmd_module, 'response_payload_xpath')
+    payload_xpath = getattr(cmd_module, 'response_payload_xpath', None)
     print_soap_response(response, payload_xpath)
 
 def load_settings(arguments):
@@ -127,9 +127,13 @@ def print_soap_response(response, payload_xpath):
     contains_xml = response_body.startswith('<')
     if contains_xml:
         root = etree.fromstring(response_body)
-        payload_xml_str = soapclient.extract_response_payload(root, payload_xpath)
-        prettified_xml = prettify_xml(payload_xml_str or response_body)
-        is_valid = soapclient.validate_payload(prettified_xml)
+        if payload_xpath:
+            payload_xml_str = soapclient.extract_response_payload(root, payload_xpath)
+            prettified_xml = prettify_xml(payload_xml_str or response_body)
+            is_valid = soapclient.validate_payload(prettified_xml)
+        else:
+            is_valid = True
+            prettified_xml = response_body
         xml_color = TermColor.Fore.GREEN if is_valid else TermColor.Fore.RED
         with textcolor(xml_color):
             print(prettified_xml)

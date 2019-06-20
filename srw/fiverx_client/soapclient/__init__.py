@@ -4,6 +4,7 @@ from . import(
     ladeRzVersion,
     ladeStatusRezept,
     pruefeRezept,
+    raw,
     sendeRezepte,
     storniereRezept,
 )
