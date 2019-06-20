@@ -40,11 +40,12 @@ def client_main(argv=sys.argv):
 
     # options_first=True is important to implement subcommands
     arguments = docopt(client_doc, argv=argv[1:], options_first=True)
+    subcommand = arguments.pop('<command>')
     _cmd_args = arguments.pop('<args>') or ()
     # commands should be able to have their own parameters but I want that this
     # still works:
     #     srwlink-client --config=... ladeRzDienste --help
-    if '--help' in _cmd_args:
+    if ('--help' in _cmd_args) or (subcommand == 'help'):
         docopt(client_doc, ('--help',))
 
     settings = load_settings(arguments)
@@ -57,7 +58,6 @@ def client_main(argv=sys.argv):
     del arguments['--help']
 
     cmd_module = None
-    subcommand = arguments.pop('<command>')
     subcommand_modules = dict(zip(subcommand_names, available_subcommands))
     for command_name in subcommand_names:
         is_active_command = (subcommand == command_name)
