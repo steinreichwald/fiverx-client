@@ -5,8 +5,8 @@ import pkg_resources
 
 from ..lib import Result
 
-__all__ = ['validate_payload']
 
+__all__ = ['validate_payload']
 
 def validate_payload(payload_string):
     parent_module = __name__.rsplit('.', 1)[0]

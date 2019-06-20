@@ -13,12 +13,8 @@ Options:
   --test           Set "test" flag
 
 Subcommands:
-    ladeRzVersion
-    ladeRzDienste
-    ladeStatusRezept
-    pruefeRezept
-    sendeRezepte
 """
+# subcommand names are added automatically
 
 from configparser import ConfigParser
 from pathlib import Path
@@ -27,24 +23,23 @@ import sys
 from docopt import docopt, DocoptExit
 from lxml import etree
 
-from .soapclient import (
-    extract_response_payload,
-    ladeRzDienste,
-    ladeRzVersion,
-    ladeStatusRezept,
-    pruefeRezept,
-    sendeRezepte,
-    send_request,
-)
-from .soapclient.payload_validation import validate_payload
+from . import soapclient
 from .utils import parse_command_args, prettify_xml, textcolor, TermColor
 
 
 __all__ = ['client_main']
 
 def client_main(argv=sys.argv):
+    submodules = [getattr(soapclient, c) for c in sorted(dir(soapclient))]
+    available_subcommands = [m for m in submodules if hasattr(m, 'build_soap_xml')]
+    subcommand_names = [m.__name__.rsplit('.', 1)[-1] for m in available_subcommands]
+    # add all available subcommands to __doc__ so we never have to list them
+    # explicitely
+    indent = lambda s: '    ' + s
+    client_doc = __doc__ + '\n'.join(map(indent, subcommand_names))
+
     # options_first=True is important to implement subcommands
-    arguments = docopt(__doc__, argv=argv[1:], options_first=True)
+    arguments = docopt(client_doc, argv=argv[1:], options_first=True)
     _cmd_args = arguments.pop('<args>') or ()
     # commands should be able to have their own parameters but I want that this
     # still works:
@@ -63,13 +58,11 @@ def client_main(argv=sys.argv):
 
     cmd_module = None
     subcommand = arguments.pop('<command>')
-    available_subcommands = (
-        ladeRzVersion, ladeRzDienste, ladeStatusRezept, pruefeRezept, sendeRezepte,
-    )
-    for module in available_subcommands:
-        command_name = module.__name__.rsplit('.', 1)[-1]
+    subcommand_modules = dict(zip(subcommand_names, available_subcommands))
+    for command_name in subcommand_names:
         is_active_command = (subcommand == command_name)
         if is_active_command:
+            module = subcommand_modules[command_name]
             cmd_module = module
     if cmd_module is None:
         raise DocoptExit('unexpected command')
@@ -91,7 +84,7 @@ def run_command(cmd_module, settings, global_args, command_args):
     soap_builder = getattr(cmd_module, 'build_soap_xml')
     soap_xml = soap_builder(header_params, command_args)
     ws_url = settings['url']
-    response = send_request(ws_url, soap_xml, use_chunking)
+    response = soapclient.send_request(ws_url, soap_xml, use_chunking)
     payload_xpath = getattr(cmd_module, 'response_payload_xpath')
     print_soap_response(response, payload_xpath)
 
@@ -134,9 +127,9 @@ def print_soap_response(response, payload_xpath):
     contains_xml = response_body.startswith('<')
     if contains_xml:
         root = etree.fromstring(response_body)
-        payload_xml_str = extract_response_payload(root, payload_xpath)
+        payload_xml_str = soapclient.extract_response_payload(root, payload_xpath)
         prettified_xml = prettify_xml(payload_xml_str or response_body)
-        is_valid = validate_payload(prettified_xml)
+        is_valid = soapclient.validate_payload(prettified_xml)
         xml_color = TermColor.Fore.GREEN if is_valid else TermColor.Fore.RED
         with textcolor(xml_color):
             print(prettified_xml)
