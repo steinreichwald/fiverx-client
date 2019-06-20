@@ -6,3 +6,4 @@ from .ladeStatusRezept import *
 from .payload_validation import *
 from .pruefeRezept import *
 from .sendeRezepte import *
+from .storniereRezept import *
