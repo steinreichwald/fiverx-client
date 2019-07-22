@@ -60,12 +60,17 @@ def assemble_soap_xml(soap_template, payload_xml, minimized=False):
     return soap_xml
 
 def send_request(ws_url, soap_xml, chunked=True):
+    charset_str = 'UTF-8'
     def payload_gen():
-        yield soap_xml
+        # requests 2.8.1 raised an exception when I passed str data for a
+        # chunked request and required byte data
+        # We set the charset anyway in the Content-Type header so we can also
+        # encode the request data here.
+        yield soap_xml.encode(charset_str)
     headers = {
         'SOAPAction': '',
         'User-Agent': 'Python SRW Testclient',
-        'Content-Type': 'text/xml; charset=UTF-8',
+        'Content-Type': 'text/xml; charset=' + charset_str,
     }
     if chunked:
         headers['Transfer-Encoding'] = 'chunked'
