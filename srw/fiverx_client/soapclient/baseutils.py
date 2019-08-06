@@ -10,6 +10,7 @@ from ..utils import strip_xml_encoding
 __all__ = [
     'assemble_soap_xml',
     'extract_response_payload',
+    'match_xpath',
     'minimize_xml',
     'sendHeader_xml',
     'send_request',
@@ -88,16 +89,20 @@ def minimize_xml(xml_str):
             minimized_payload += '\n'
     return minimized_payload
 
-def extract_response_payload(root, xpath):
+def match_xpath(root, xpath):
     namespaces = {
         'soap': 'http://schemas.xmlsoap.org/soap/envelope/',
         'fiverx': 'http://fiverx.de/spec/abrechnungsservice/types',
     }
     matched_elements = root.xpath(xpath, namespaces=namespaces)
     if matched_elements:
-        payload_str = matched_elements[0].text
+        return matched_elements[0]
+    return None
+
+def extract_response_payload(root, xpath):
+    element = match_xpath(root, xpath)
+    if element is not None:
+        payload_str = element.text.strip()
     else:
-        payload_str = root.text
-    if payload_str:
-        payload_str = strip_xml_encoding(payload_str)
-    return payload_str
+        return ''
+    return strip_xml_encoding(payload_str)

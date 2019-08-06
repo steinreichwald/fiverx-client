@@ -9,6 +9,7 @@ Usage:
 Options:
   --chunked        Use chunked HTTP requests
   --config=<config> Specify config file
+  --print-request  Also print the request payload
   -h, --help       Show this screen
   --test           Set "test" flag
 
@@ -73,6 +74,7 @@ def client_main(argv=sys.argv):
 def run_command(cmd_module, settings, global_args, command_args):
     use_chunking = global_args.pop('--chunked')
     is_test_request = global_args.pop('--test')
+    print_request = global_args.pop('--print-request')
     command_args = parse_command_args(cmd_module.__doc__, command_args, global_args)
 
     _s = settings
@@ -84,6 +86,11 @@ def run_command(cmd_module, settings, global_args, command_args):
     }
     soap_builder = getattr(cmd_module, 'build_soap_xml')
     soap_xml = soap_builder(header_params, command_args)
+
+    if print_request:
+        request_payload_xpath = guess_payload_xpath(soap_xml)
+        print_soap_request(soap_xml, request_payload_xpath)
+        print('-------------------------------------------------------------')
     ws_url = settings['url']
     response = soapclient.send_request(ws_url, soap_xml, use_chunking)
     payload_xpath = getattr(cmd_module, 'response_payload_xpath')
@@ -120,6 +127,22 @@ def parse_config(config_path):
     config.read([config_path])
     settings = dict(config.items('srw.link'))
     return settings
+
+def guess_payload_xpath(soap_xml):
+    root = etree.fromstring(strip_xml_encoding(soap_xml))
+    fiverx_root = soapclient.match_xpath(root, '//soap:Body/fiverx:*')
+    assert fiverx_root is not None
+    simple_name = fiverx_root.tag.split('}', 1)[-1]
+    return '//soap:Body/fiverx:%s/*' % simple_name
+
+def print_soap_request(soap_xml, payload_xpath):
+    root = etree.fromstring(strip_xml_encoding(soap_xml))
+    payload_xml_str = soapclient.extract_response_payload(root, payload_xpath)
+    prettified_xml = prettify_xml(payload_xml_str)
+    is_valid = soapclient.validate_payload(prettified_xml)
+    xml_color = TermColor.Fore.GREEN if is_valid else TermColor.Fore.RED
+    with textcolor(xml_color):
+        print(prettified_xml)
 
 def print_soap_response(response, payload_xpath):
     if response.status_code != 200:
