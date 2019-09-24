@@ -25,8 +25,8 @@ from docopt import docopt, DocoptExit
 from lxml import etree
 
 from . import soapclient
-from .utils import (parse_command_args, prettify_xml, strip_xml_encoding,
-    textcolor, TermColor)
+from .utils import (is_colorama_available, parse_command_args, prettify_xml,
+    strip_xml_encoding, textcolor, TermColor)
 
 
 __all__ = ['client_main']
@@ -161,8 +161,9 @@ def print_soap_response(response, payload_xpath):
         with textcolor(xml_color):
             print(prettified_xml)
 
-        with textcolor(TermColor.Style.BRIGHT + xml_color):
-            if not is_valid:
+        if not is_valid:
+            error_color = (TermColor.Style.BRIGHT + xml_color) if is_colorama_available else None
+            with textcolor(error_color):
                 print('==> INVALID XML in server response!')
     else:
         print(response_body)

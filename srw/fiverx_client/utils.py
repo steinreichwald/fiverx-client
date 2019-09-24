@@ -71,6 +71,7 @@ def is_colorama_initialized():
 @contextmanager
 def textcolor(color):
     if not is_colorama_available:
+        yield
         return
     if not is_colorama_initialized():
         colorama.init()
