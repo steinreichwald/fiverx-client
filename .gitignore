@@ -1,9 +1,8 @@
-fiverx.ini
-submission.ini
+/*.ini
 *.pyc
-*.egg-info
-.project
-.pydevproject
-.settings
-venv
-venv.py3?
+/*.egg-info
+/.project
+/.pydevproject
+/.settings
+/venv
+/venv.py3?
