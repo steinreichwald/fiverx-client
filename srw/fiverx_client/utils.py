@@ -8,6 +8,7 @@ from soapfish.lib.attribute_dict import AttrDict
 
 __all__ = [
     'MUSTER16',
+    'decode_xml_bytes',
     'parse_command_args',
     'pprint_xml',
     'prettify_xml',
@@ -40,6 +41,17 @@ def prettify_xml(xml):
 
 def pprint_xml(xml_str):
     print(prettify_xml(xml_str))
+
+def decode_xml_bytes(xml_bytes):
+    xml_decl_pattern = b'^<\?xml [^>]*?encoding="([^"]+)".*?>\s*'
+    regex_xml_declaration = re.compile(xml_decl_pattern)
+    match_decl = regex_xml_declaration.search(xml_bytes)
+    if match_decl:
+        encoding = match_decl.group(1).decode('ascii')
+        xml_str = xml_bytes.decode(encoding)
+    else:
+        xml_str = xml_bytes.decode('utf8')
+    return xml_str
 
 def strip_xml_encoding(xml_str):
     # lxml will complain when loading a ("unicode") string with XML encoding declaration

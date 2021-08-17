@@ -6,6 +6,7 @@ Usage:
 """
 
 from .baseutils import assemble_soap_xml, sendHeader_xml
+from ..utils import decode_xml_bytes, strip_xml_encoding
 
 __all__ = [
     'build_soap_xml'
@@ -17,8 +18,9 @@ def build_soap_xml(header_params, command_args, minimized=False):
     rzLeistungInhalte = []
     for xml_path in xml_paths:
         with open(xml_path, 'rb') as xml_fp:
-            xml_contents = xml_fp.read().decode('utf8')
-        leistung_params = dict(avsId='12345', prescription_xml=xml_contents)
+            xml_bytes = xml_fp.read()
+        xml_str = strip_xml_encoding(decode_xml_bytes(xml_bytes))
+        leistung_params = dict(avsId='12345', prescription_xml=xml_str)
         rzLeistungInhalt = rzLeistungInhalt_template % leistung_params
         rzLeistungInhalte.append(rzLeistungInhalt)
 
