@@ -78,7 +78,7 @@ def send_request(ws_url, soap_xml, chunked=True, *, verify_cert=True):
         data = payload_gen()
     else:
         data = soap_xml
-    response = requests.post(ws_url, data=data, headers=headers, verify=verify_cert)
+    response = requests.post(ws_url, data=data, headers=headers, verify=verify_cert, allow_redirects=False)
     return response
 
 def minimize_xml(xml_str):
