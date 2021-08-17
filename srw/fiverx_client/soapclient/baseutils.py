@@ -60,7 +60,7 @@ def assemble_soap_xml(soap_template, payload_xml, minimized=False):
         sys.exit(20)
     return soap_xml
 
-def send_request(ws_url, soap_xml, chunked=True):
+def send_request(ws_url, soap_xml, chunked=True, *, verify_cert=True):
     charset_str = 'UTF-8'
     def payload_gen():
         # requests 2.8.1 raised an exception when I passed str data for a
@@ -78,7 +78,7 @@ def send_request(ws_url, soap_xml, chunked=True):
         data = payload_gen()
     else:
         data = soap_xml
-    response = requests.post(ws_url, data=data, headers=headers)
+    response = requests.post(ws_url, data=data, headers=headers, verify=verify_cert)
     return response
 
 def minimize_xml(xml_str):

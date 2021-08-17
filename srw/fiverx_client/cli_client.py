@@ -8,6 +8,7 @@ Usage:
 
 Options:
   --chunked        Use chunked HTTP requests
+  --no-cert-verification disable TLS certificate verification
   --config=<config> Specify config file
   --print-request  Also print the request payload
   -h, --help       Show this screen
@@ -75,6 +76,7 @@ def run_command(cmd_module, settings, global_args, command_args):
     use_chunking = global_args.pop('--chunked')
     is_test_request = global_args.pop('--test')
     print_request = global_args.pop('--print-request')
+    verify_cert = not global_args.pop('--no-cert-verification')
     command_args = parse_command_args(cmd_module.__doc__, command_args, global_args)
 
     _s = settings
@@ -92,7 +94,7 @@ def run_command(cmd_module, settings, global_args, command_args):
         print_soap_request(soap_xml, request_payload_xpath)
         print('-------------------------------------------------------------')
     ws_url = settings['url']
-    response = soapclient.send_request(ws_url, soap_xml, use_chunking)
+    response = soapclient.send_request(ws_url, soap_xml, use_chunking, verify_cert=verify_cert)
     payload_xpath = getattr(cmd_module, 'response_payload_xpath')
     print_soap_response(response, payload_xpath)
 
