@@ -18,6 +18,7 @@ Subcommands:
 """
 # subcommand names are added automatically
 
+import cgi
 from configparser import ConfigParser
 from pathlib import Path
 import sys
@@ -95,8 +96,14 @@ def run_command(cmd_module, settings, global_args, command_args):
         print('-------------------------------------------------------------')
     ws_url = settings['url']
     response = soapclient.send_request(ws_url, soap_xml, use_chunking, verify_cert=verify_cert)
-    payload_xpath = getattr(cmd_module, 'response_payload_xpath')
-    print_soap_response(response, payload_xpath)
+    mimetype, options = cgi.parse_header(response.headers['Content-Type'])
+    if mimetype == 'text/html':
+        with textcolor(TermColor.Fore.RED):
+            print(f'HTML response: Status {response.status_code}')
+            print(response.content)
+    else:
+        payload_xpath = getattr(cmd_module, 'response_payload_xpath')
+        print_soap_response(response, payload_xpath)
 
 def load_settings(arguments):
     config_path = guess_config_path(arguments['--config'])
