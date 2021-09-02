@@ -162,7 +162,12 @@ def print_soap_response(response, payload_xpath):
         # If the server response starts with an XML encoding declaration this
         # will lead to an lxml exception because "response_body" is already
         # a string. Just ignore the XML encoding by stripping it.
-        root = etree.fromstring(strip_xml_encoding(response_body))
+        try:
+            root = etree.fromstring(strip_xml_encoding(response_body))
+        except:
+            with textcolor(TermColor.Fore.RED):
+                print(response_body)
+            return
         payload_xml_str = soapclient.extract_response_payload(root, payload_xpath)
         prettified_xml = prettify_xml(payload_xml_str or response_body)
         is_valid = soapclient.validate_payload(prettified_xml)
