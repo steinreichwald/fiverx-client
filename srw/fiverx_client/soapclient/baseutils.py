@@ -3,6 +3,10 @@ import sys
 
 from lxml import etree
 import requests
+try:
+    from requests.packages import urllib3
+except ImportError:
+    import urllib3
 
 from ..utils import strip_xml_encoding
 
@@ -78,6 +82,10 @@ def send_request(ws_url, soap_xml, chunked=True, *, verify_cert=True):
         data = payload_gen()
     else:
         data = soap_xml
+    if not verify_cert:
+        # avoid "InsecureRequestWarning" from urllib3:
+        # "Unverified HTTPS request is being made. Adding certificate verification is strongly advised."
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     response = requests.post(ws_url, data=data, headers=headers, verify=verify_cert, allow_redirects=False)
     return response
 
