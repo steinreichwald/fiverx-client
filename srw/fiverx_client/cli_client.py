@@ -92,7 +92,9 @@ def run_command(cmd_module, settings, global_args, command_args):
 
     if print_request:
         request_payload_xpath = guess_payload_xpath(soap_xml)
-        print_soap_request(soap_xml, request_payload_xpath)
+        is_valid = print_soap_request(soap_xml, request_payload_xpath)
+        if not is_valid:
+            return
         print('-------------------------------------------------------------')
     ws_url = settings['url']
     response = soapclient.send_request(ws_url, soap_xml, use_chunking, verify_cert=verify_cert)
@@ -152,6 +154,7 @@ def print_soap_request(soap_xml, payload_xpath):
     xml_color = TermColor.Fore.GREEN if is_valid else TermColor.Fore.RED
     with textcolor(xml_color):
         print(prettified_xml)
+    return is_valid
 
 def print_soap_response(response, payload_xpath):
     if response.status_code != 200:
