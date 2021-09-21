@@ -8,7 +8,7 @@ Usage:
 
 Options:
   --chunked        Use chunked HTTP requests
-  --no-cert-verification disable TLS certificate verification
+  --no-cert-verification    disable TLS certificate verification
   --config=<config> Specify config file
   --print-request  Also print the request payload
   -h, --help       Show this screen
