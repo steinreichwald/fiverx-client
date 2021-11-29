@@ -72,7 +72,7 @@ except ImportError:
     colorama = None
     is_colorama_available = False
     class TermColor:
-        Fore = AttrDict({'GREEN': None, 'RED': None})
+        Fore = AttrDict({'GREEN': None, 'RED': None, 'YELLOW': None})
         Style = AttrDict({'BRIGHT': None})
 
 def is_colorama_initialized():

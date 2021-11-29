@@ -25,6 +25,7 @@ import sys
 
 from docopt import docopt, DocoptExit
 from lxml import etree
+from requests.exceptions import RequestException
 
 from . import soapclient
 from .utils import (is_colorama_available, parse_command_args, prettify_xml,
@@ -97,12 +98,27 @@ def run_command(cmd_module, settings, global_args, command_args):
             return
         print('-------------------------------------------------------------')
     ws_url = settings['url']
-    response = soapclient.send_request(ws_url, soap_xml, use_chunking, verify_cert=verify_cert)
+    try:
+        response = soapclient.send_request(ws_url, soap_xml, use_chunking, verify_cert=verify_cert)
+    except KeyboardInterrupt:
+        # avoid ugly traceback when user cancels request with Ctrl+C
+        with textcolor(TermColor.Fore.YELLOW):
+            print('request cancelled')
+        return
+    except RequestException as e:
+        with textcolor(TermColor.Fore.RED):
+            print(f'unable to send request to {ws_url}:')
+            print(str(e))
+        return
     mimetype, options = cgi.parse_header(response.headers['Content-Type'])
     if mimetype == 'text/html':
         with textcolor(TermColor.Fore.RED):
-            print(f'HTML response: Status {response.status_code}')
-            print(response.content)
+            print(f'HTML response: Status {response.status_code} (text/html)')
+            if not response.content:
+                content_length = response.headers.get('Content-Length')
+                print('no response body (header "Content-Length": %r)' % content_length)
+            else:
+                print(response.content)
     else:
         payload_xpath = getattr(cmd_module, 'response_payload_xpath')
         print_soap_response(response, payload_xpath)
