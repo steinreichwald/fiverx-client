@@ -11,6 +11,7 @@ Options:
   --no-cert-verification    disable TLS certificate verification
   --config=<config> Specify config file
   --print-request  Also print the request payload
+  --api-version=<apoti_version>  Version of the ApoTI protocol [default: 01.08]
   -h, --help       Show this screen
   --test           Set "test" flag
 
@@ -21,6 +22,7 @@ Subcommands:
 import cgi
 from configparser import ConfigParser
 from pathlib import Path
+import re
 import sys
 
 from docopt import docopt, DocoptExit
@@ -79,6 +81,7 @@ def run_command(cmd_module, settings, global_args, command_args):
     is_test_request = global_args.pop('--test')
     print_request = global_args.pop('--print-request')
     verify_cert = not global_args.pop('--no-cert-verification')
+    api_version = global_args.pop('--api-version')
     command_args = parse_command_args(cmd_module.__doc__, command_args, global_args)
 
     _s = settings
@@ -89,7 +92,7 @@ def run_command(cmd_module, settings, global_args, command_args):
         'test': 'true' if is_test_request else 'false',
     }
     soap_builder = getattr(cmd_module, 'build_soap_xml')
-    soap_xml = soap_builder(header_params, command_args)
+    soap_xml = soap_builder(header_params, command_args, version=api_version)
 
     if print_request:
         request_payload_xpath = guess_payload_xpath(soap_xml)
@@ -166,7 +169,10 @@ def print_soap_request(soap_xml, payload_xpath):
     root = etree.fromstring(strip_xml_encoding(soap_xml))
     payload_xml_str = soapclient.extract_response_payload(root, payload_xpath)
     prettified_xml = prettify_xml(payload_xml_str)
-    is_valid = soapclient.validate_payload(prettified_xml)
+    match = re.search(r'&lt;versionNr&gt;(01\.\d{2})&lt;/versionNr&gt;', soap_xml)
+    version = match.group(1)
+
+    is_valid = soapclient.validate_payload(prettified_xml, version=version)
     xml_color = TermColor.Fore.GREEN if is_valid else TermColor.Fore.RED
     with textcolor(xml_color):
         print(prettified_xml)

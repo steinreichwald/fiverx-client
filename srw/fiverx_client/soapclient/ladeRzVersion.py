@@ -12,7 +12,8 @@ __all__ = [
     'build_soap_xml'
 ]
 
-def build_soap_xml(header_params, command_args, minimized=False):
+def build_soap_xml(header_params, command_args, minimized=False, *, version=None):
+    # version not used for this SOAP method
     template = payload_template.lstrip('\n')
     sendHeader = sendHeader_xml(**header_params)
     payload_xml = template % {'sendHeader': sendHeader}

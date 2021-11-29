@@ -12,7 +12,7 @@ __all__ = [
     'build_soap_xml'
 ]
 
-def build_soap_xml(header_params, command_args, minimized=False):
+def build_soap_xml(header_params, command_args, minimized=False, *, version):
     xml_paths = command_args['<XML>']
 
     rzLeistungInhalte = []
@@ -31,7 +31,7 @@ def build_soap_xml(header_params, command_args, minimized=False):
         'rzLeistungInhalte_xml': '\n'.join(rzLeistungInhalte),
     }
     payload_xml = template % payload_params
-    soap_xml = assemble_soap_xml(soap_template, payload_xml, minimized=minimized)
+    soap_xml = assemble_soap_xml(soap_template, payload_xml, minimized=minimized, version=version)
     return soap_xml
 
 response_payload_xpath = '//fiverx:sendeRezepteResponse/result'

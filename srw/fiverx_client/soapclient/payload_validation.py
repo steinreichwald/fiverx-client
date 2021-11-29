@@ -1,4 +1,6 @@
 
+import re
+
 from lxml import etree, objectify
 from lxml.etree import XMLSchema
 import pkg_resources
@@ -8,9 +10,12 @@ from ..lib import Result
 
 __all__ = ['validate_payload']
 
-def validate_payload(payload_string):
+def validate_payload(payload_string, *, version='01.08'):
+    assert re.match('^01\.\d{2}', version), version
+    version_suffix = version.replace('.', '_')
+    xsd_fn = f'RZeRezept_{version_suffix}.xsd'
     parent_module = __name__.rsplit('.', 1)[0]
-    xsd_string = pkg_resources.resource_string(parent_module+'.static', 'RZeRezept_01_08.xsd')
+    xsd_string = pkg_resources.resource_string(parent_module+'.static', xsd_fn)
     xmlschema = XMLSchema(etree.fromstring(xsd_string))
     parser = objectify.makeparser(schema=xmlschema)
 

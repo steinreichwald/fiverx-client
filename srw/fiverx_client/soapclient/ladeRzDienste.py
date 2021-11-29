@@ -12,11 +12,11 @@ __all__ = [
     'build_soap_xml'
 ]
 
-def build_soap_xml(header_params, command_args, minimized=False):
+def build_soap_xml(header_params, command_args, minimized=False, *,  version):
     template = payload_template.strip()
     sendHeader = sendHeader_xml(**header_params)
     payload_xml = template % {'sendHeader': sendHeader}
-    soap_xml = assemble_soap_xml(soap_template, payload_xml, minimized=minimized)
+    soap_xml = assemble_soap_xml(soap_template, payload_xml, minimized=minimized, version=version)
     return soap_xml
 
 response_payload_xpath = '//fiverx:ladeRzDiensteResponse/result'

@@ -13,7 +13,7 @@ __all__ = [
     'build_soap_xml'
 ]
 
-def build_soap_xml(header_params, command_args, minimized=False):
+def build_soap_xml(header_params, command_args, minimized=False, *, version):
     cancel_muster16 = bool(command_args['muster16'])
     cancel_prezept = bool(command_args['prezept'])
     if cancel_muster16:
@@ -29,7 +29,7 @@ def build_soap_xml(header_params, command_args, minimized=False):
     template = payload_template.strip()
     sendHeader = sendHeader_xml(**header_params)
     payload_xml = template % {'sendHeader': sendHeader, 'query_xml': query_xml}
-    soap_xml = assemble_soap_xml(soap_template, payload_xml, minimized=minimized)
+    soap_xml = assemble_soap_xml(soap_template, payload_xml, minimized=minimized, version=version)
     return soap_xml
 
 response_payload_xpath = '//fiverx:storniereRezeptResponse/result'
