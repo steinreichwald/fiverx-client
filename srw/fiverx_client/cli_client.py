@@ -102,10 +102,19 @@ def run_command(cmd_module, settings, global_args, command_args):
             return
         print('-------------------------------------------------------------')
     ws_url = settings['url']
+    hostname = settings.get('hostname')
     if not contains_hostname(ws_url):
         verify_cert = False
+        if not hostname:
+            with textcolor(TermColor.Fore.YELLOW):
+                print(f'web service URL "{ws_url}" references specific IP address but no hostname set in config')
+    elif hostname:
+        url = urlparse(ws_url)
+        if hostname != url.hostname:
+            with textcolor(TermColor.Fore.YELLOW):
+                print(f'Configured HTTP host name "{hostname}" does not match web service URL "{ws_url}"')
     try:
-        response = soapclient.send_request(ws_url, soap_xml, use_chunking, verify_cert=verify_cert)
+        response = soapclient.send_request(ws_url, soap_xml, use_chunking, verify_cert=verify_cert, hostname=hostname)
     except KeyboardInterrupt:
         # avoid ugly traceback when user cancels request with Ctrl+C
         with textcolor(TermColor.Fore.YELLOW):

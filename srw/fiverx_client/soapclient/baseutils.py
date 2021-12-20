@@ -64,7 +64,7 @@ def assemble_soap_xml(soap_template, payload_xml, minimized=False, *, version='0
         sys.exit(20)
     return soap_xml
 
-def send_request(ws_url, soap_xml, chunked=True, *, verify_cert=True):
+def send_request(ws_url, soap_xml, chunked=True, *, verify_cert=True, hostname=None):
     charset_str = 'UTF-8'
     def payload_gen():
         # requests 2.8.1 raised an exception when I passed str data for a
@@ -77,6 +77,8 @@ def send_request(ws_url, soap_xml, chunked=True, *, verify_cert=True):
         'User-Agent': 'Python SRW Testclient',
         'Content-Type': 'text/xml; charset=' + charset_str,
     }
+    if hostname:
+        headers['Host'] = hostname
     if chunked:
         headers['Transfer-Encoding'] = 'chunked'
         data = payload_gen()
