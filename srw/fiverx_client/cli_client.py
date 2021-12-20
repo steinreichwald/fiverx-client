@@ -24,6 +24,7 @@ from configparser import ConfigParser
 from pathlib import Path
 import re
 import sys
+from urllib.parse import urlparse
 
 from docopt import docopt, DocoptExit
 from lxml import etree
@@ -101,6 +102,8 @@ def run_command(cmd_module, settings, global_args, command_args):
             return
         print('-------------------------------------------------------------')
     ws_url = settings['url']
+    if not contains_hostname(ws_url):
+        verify_cert = False
     try:
         response = soapclient.send_request(ws_url, soap_xml, use_chunking, verify_cert=verify_cert)
     except KeyboardInterrupt:
@@ -157,6 +160,13 @@ def parse_config(config_path):
     config.read([config_path])
     settings = dict(config.items('srw.link'))
     return settings
+
+def contains_hostname(url_str):
+    url = urlparse(url_str)
+    ipv4_regex = re.compile('^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$')
+    # url.hostname only contains the hostname/IP address without port
+    contains_ipv4 = ipv4_regex.match(url.hostname)
+    return not contains_ipv4
 
 def guess_payload_xpath(soap_xml):
     root = etree.fromstring(strip_xml_encoding(soap_xml))
