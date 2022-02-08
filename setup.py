@@ -39,6 +39,7 @@ setup(
     [console_scripts]
     fiverx-fetch-prescriptions = srw.fiverx_client.fetch_prescriptions:main
     srwlink-client = srw.fiverx_client.cli_client:client_main
+    srwlink-extract-payload = srw.fiverx_client.extract_payload:extract_payload_main
     """,
 )
 
