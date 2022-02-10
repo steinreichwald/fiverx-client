@@ -5,8 +5,15 @@ Usage:
     sendeRezepte <XML>...
 """
 
+from pathlib import Path
+import sys
+
+from lxml import etree
+from lxml.etree import XMLSyntaxError
+
 from .baseutils import assemble_soap_xml, sendHeader_xml
-from ..utils import decode_xml_bytes, strip_xml_encoding
+from ..utils import decode_xml_bytes, strip_xml_encoding, textcolor, TermColor
+
 
 __all__ = [
     'build_soap_xml'
@@ -20,6 +27,13 @@ def build_soap_xml(header_params, command_args, minimized=False, *, version):
         with open(xml_path, 'rb') as xml_fp:
             xml_bytes = xml_fp.read()
         xml_str = strip_xml_encoding(decode_xml_bytes(xml_bytes))
+        try:
+            etree.fromstring(xml_str)
+        except XMLSyntaxError as e:
+            with textcolor(TermColor.Fore.RED):
+                fn = Path(xml_path).name
+                print(f'{fn}: invalid XML for eLeistungBody {e.msg}')
+            sys.exit(1)
         leistung_params = dict(avsId='12345', prescription_xml=xml_str)
         rzLeistungInhalt = rzLeistungInhalt_template % leistung_params
         rzLeistungInhalte.append(rzLeistungInhalt)
