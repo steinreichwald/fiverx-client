@@ -5,6 +5,7 @@ Usage:
     sendeRezepte <XML>...
 """
 
+from base64 import b64encode
 from pathlib import Path
 import sys
 
@@ -24,17 +25,11 @@ def build_soap_xml(header_params, command_args, minimized=False, *, version):
 
     rzLeistungInhalte = []
     for xml_path in xml_paths:
-        with open(xml_path, 'rb') as xml_fp:
+        source_path = Path(xml_path)
+        with source_path.open('rb') as xml_fp:
             xml_bytes = xml_fp.read()
-        xml_str = strip_xml_encoding(decode_xml_bytes(xml_bytes))
-        try:
-            etree.fromstring(xml_str)
-        except XMLSyntaxError as e:
-            with textcolor(TermColor.Fore.RED):
-                fn = Path(xml_path).name
-                print(f'{fn}: invalid XML for eLeistungBody {e.msg}')
-            sys.exit(1)
-        leistung_params = dict(avsId='12345', prescription_xml=xml_str)
+        body_str = _eleistung_body(xml_bytes, source_path, version=version)
+        leistung_params = dict(avsId='12345', prescription_xml=body_str)
         rzLeistungInhalt = rzLeistungInhalt_template % leistung_params
         rzLeistungInhalte.append(rzLeistungInhalt)
 
@@ -48,7 +43,34 @@ def build_soap_xml(header_params, command_args, minimized=False, *, version):
     soap_xml = assemble_soap_xml(soap_template, payload_xml, minimized=minimized, version=version)
     return soap_xml
 
+def _eleistung_body(xml_bytes, source_path, *, version):
+    xml_str = strip_xml_encoding(decode_xml_bytes(xml_bytes))
+    try:
+        xml_doc = etree.fromstring(xml_str)
+    except XMLSyntaxError as e:
+        with textcolor(TermColor.Fore.RED):
+            print(f'{source_path.name}: invalid XML for eLeistungBody {e.msg}')
+        sys.exit(1)
+
+    is_erezept = (xml_doc.tag == 'eDispensierung')
+    if not is_erezept:
+        return xml_str
+    if version != '01.10':
+        with textcolor(TermColor.Fore.RED):
+            print(f'{source_path.name}: eRezepte können nur über API-Version 1.10 verschickt werden')
+        sys.exit(1)
+    erezept_id = xml_doc.attrib['RezeptId']
+    b64_edispensierung = b64encode(xml_bytes.strip()).decode('ASCII')
+    return erezept_template % {'id': erezept_id, 'data': b64_edispensierung}
+
 response_payload_xpath = '//fiverx:sendeRezepteResponse/result'
+
+erezept_template = '''
+  <eRezept>
+    <eRezeptId>%(id)s</eRezeptId>
+    <eRezeptData>%(data)s</eRezeptData>
+  </eRezept>
+'''
 
 rzLeistungInhalt_template = '''
     <rzLeistungInhalt>

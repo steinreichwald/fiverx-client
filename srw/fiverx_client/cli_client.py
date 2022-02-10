@@ -83,6 +83,7 @@ def run_command(cmd_module, settings, global_args, command_args):
     print_request = global_args.pop('--print-request')
     verify_cert = not global_args.pop('--no-cert-verification')
     api_version = global_args.pop('--api-version')
+    assert (api_version in ('01.08', '01.10'))
     command_args = parse_command_args(cmd_module.__doc__, command_args, global_args)
 
     _s = settings
