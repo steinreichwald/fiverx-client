@@ -87,10 +87,20 @@ def run_command(cmd_module, settings, global_args, command_args):
     command_args = parse_command_args(cmd_module.__doc__, command_args, global_args)
 
     _s = settings
+    soap_user = _s.get('soap_user')
+    apo_ik = _s.get('soap_apoik')
+    assert (soap_user or apo_ik)
+    if (not soap_user) and apo_ik:
+        assert re.match('^\d{9}$', apo_ik)
+        soap_user = apo_ik
+    elif (not apo_ik) and soap_user:
+        assert re.match('^\d{9}$', soap_user)
+        apo_ik = soap_user
+
     header_params = {
-        'user': _s['soap_user'],
+        'user': soap_user,
         'password': _s['soap_password'],
-        'apoik': _s['soap_apoik'],
+        'apoik': apo_ik,
         'test': 'true' if is_test_request else 'false',
     }
     soap_builder = getattr(cmd_module, 'build_soap_xml')
