@@ -13,6 +13,7 @@ Options:
   --print-request  Also print the request payload
   --api-version=<apoti_version>  Version of the ApoTI protocol [default: 01.08]
   --quiet          Suppress all output
+  --nagios         Use nagios-compatible return codes/output
   -h, --help       Show this screen
   --test           Set "test" flag
 
@@ -40,11 +41,19 @@ from lxml import etree
 from requests.exceptions import RequestException
 
 from . import soapclient
+from .lib import Result
 from .utils import (is_colorama_available, parse_command_args, prettify_xml,
     strip_xml_encoding, textcolor, TermColor)
 
 
 __all__ = ['client_main']
+
+class NagiosRC:
+    OK       = 0
+    WARNING  = 1
+    CRITICAL = 2
+    UNKNOWN  = 3
+_N = NagiosRC
 
 def client_main(argv=sys.argv):
     submodules = [getattr(soapclient, c) for c in sorted(dir(soapclient))]
@@ -85,6 +94,10 @@ def client_main(argv=sys.argv):
         raise DocoptExit('unexpected command')
 
     rc = run_command(cmd_module, settings, arguments, _cmd_args)
+    if hasattr(rc, 'nagios'):
+        # used for "--nagios"
+        print(rc.message)
+        return rc.nagios
     return rc
 
 def run_command(cmd_module, settings, global_args, command_args):
@@ -95,8 +108,11 @@ def run_command(cmd_module, settings, global_args, command_args):
     api_version = global_args.pop('--api-version')
     assert (api_version in ('01.08', '01.10'))
     quiet = global_args.pop('--quiet')
-    if quiet:
+    nagios_output = global_args.pop('--nagios')
+    if quiet or nagios_output:
         assert (not print_request)
+    if nagios_output:
+        quiet = True
     command_args = parse_command_args(cmd_module.__doc__, command_args, global_args)
 
     _s = settings
@@ -119,24 +135,40 @@ def run_command(cmd_module, settings, global_args, command_args):
     soap_builder = getattr(cmd_module, 'build_soap_xml')
     soap_xml = soap_builder(header_params, command_args, version=api_version)
 
+    def _R(value, *, nagios=None, message=None):
+        is_result = hasattr(value, 'nagios')
+        if nagios_output:
+            if is_result:
+                assert (nagios is None) and (message is None)
+                return value
+            else:
+                assert (nagios is not None) and (message is not None)
+                return Result(value, nagios=nagios, message=message)
+        return value if (not is_result) else value.value
     if print_request:
         request_payload_xpath = guess_payload_xpath(soap_xml)
         is_valid = print_soap_request(soap_xml, request_payload_xpath)
         if not is_valid:
-            return 10
+            return _R(10, nagios=_N.UNKNOWN, message='Invalid SOAP request')
         print('-------------------------------------------------------------')
     ws_url = settings['url']
     hostname = settings.get('hostname')
     if not contains_hostname(ws_url):
         verify_cert = False
         if not hostname:
+            msg = f'web service URL "{ws_url}" references specific IP address but no hostname set in config'
             with textcolor(TermColor.Fore.YELLOW):
-                print(f'web service URL "{ws_url}" references specific IP address but no hostname set in config')
+                print(msg)
+            if nagios_output:
+                return _R(10, nagios=_N.WARNING, message=msg)
     elif hostname:
         url = urlparse(ws_url)
+        msg = f'Configured HTTP host name "{hostname}" does not match web service URL "{ws_url}"'
         if (hostname != url.hostname) and (not quiet):
             with textcolor(TermColor.Fore.YELLOW):
-                print(f'Configured HTTP host name "{hostname}" does not match web service URL "{ws_url}"')
+                print(msg)
+        if nagios_output:
+            return _R(10, nagios=_N.WARNING, message=msg)
     try:
         response = soapclient.send_request(ws_url, soap_xml, use_chunking, verify_cert=verify_cert, hostname=hostname)
     except KeyboardInterrupt:
@@ -144,28 +176,30 @@ def run_command(cmd_module, settings, global_args, command_args):
         if not quiet:
             with textcolor(TermColor.Fore.YELLOW):
                 print('request cancelled')
-        return 0
+        return _R(0, nagios=_N.UNKNOWN, message='request cancelled')
     except RequestException as e:
+        msg = f'unable to send request to {ws_url}'
         if not quiet:
             with textcolor(TermColor.Fore.RED):
-                print(f'unable to send request to {ws_url}:')
+                print(msg)
                 print(str(e))
-        return 15
+        return _R(15, nagios=_N.CRITICAL, message=msg+f': {str(e)}')
     mimetype, options = cgi.parse_header(response.headers['Content-Type'])
     if mimetype == 'text/html':
+        msg = f'HTML response: Status {response.status_code} (text/html)'
         if not quiet:
             with textcolor(TermColor.Fore.RED):
-                print(f'HTML response: Status {response.status_code} (text/html)')
+                print(msg)
                 if not response.content:
                     content_length = response.headers.get('Content-Length')
                     print('no response body (header "Content-Length": %r)' % content_length)
                 else:
                     print(response.content)
-        return 21
+        return _R(21, nagios=_N.CRITICAL, message=msg)
     else:
         payload_xpath = getattr(cmd_module, 'response_payload_xpath')
-        rc = process_soap_response(response, payload_xpath, quiet=quiet)
-        return rc
+        result = process_soap_response(response, payload_xpath, quiet=quiet)
+        return _R(result)
 
 def load_settings(arguments):
     config_path = guess_config_path(arguments['--config'])
@@ -241,7 +275,7 @@ def process_soap_response(response, payload_xpath, *, quiet=False):
             if not quiet:
                 with textcolor(TermColor.Fore.RED):
                     print(response_body)
-            return 22
+            return Result(22, nagios=_N.CRITICAL, message='response data is not well-formed XML')
         payload_xml_str = soapclient.extract_response_payload(root, payload_xpath)
         prettified_xml = prettify_xml(payload_xml_str or response_body)
         is_valid = soapclient.validate_payload(prettified_xml)
@@ -255,9 +289,9 @@ def process_soap_response(response, payload_xpath, *, quiet=False):
                 error_color = (TermColor.Style.BRIGHT + xml_color) if is_colorama_available else None
                 with textcolor(error_color):
                     print('==> INVALID XML in server response!')
-            return 23
-        return 0
+            return Result(23, nagios=_N.CRITICAL, message='invalid XML response (XML Schema)')
+        return Result(0, nagios=_N.OK, message='OK')
     else:
         if not quiet:
             print(response_body)
-        return 22
+        return Result(22, nagios=_N.CRITICAL, message='response data is not well-formed XML')
