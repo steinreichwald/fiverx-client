@@ -84,7 +84,8 @@ def client_main(argv=sys.argv):
     if cmd_module is None:
         raise DocoptExit('unexpected command')
 
-    run_command(cmd_module, settings, arguments, _cmd_args)
+    rc = run_command(cmd_module, settings, arguments, _cmd_args)
+    return rc
 
 def run_command(cmd_module, settings, global_args, command_args):
     use_chunking = global_args.pop('--chunked')
