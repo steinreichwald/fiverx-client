@@ -1,9 +1,0 @@
---index-url=https://www.steinreichwald.net/srw.link/dependencies/
-argparse
-docopt
-babel
-lxml
-requests
-setuptools
-soapfish >= 0.6dev # changed import locations, e.g. SOAPError
-
