@@ -1,9 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import re
 import sys
 
-from setuptools import setup, find_packages
+from setuptools import setup
 
 
 requires = []
@@ -21,25 +21,6 @@ def requires_from_file(filename):
 
 
 setup(
-    name='FiveRX Client',
-    version='1.0',
-
-    author='Felix Schwarz',
-    author_email='info@schwarz.eu',
-    license='proprietary',
-
-    zip_safe=False,
-    packages=find_packages(),
-    namespace_packages = ['srw'],
-    include_package_data=True,
-    
     install_requires=requires_from_file('requirements.txt'),
-    entry_points="""
-
-    [console_scripts]
-    fiverx-fetch-prescriptions = srw.fiverx_client.fetch_prescriptions:main
-    srwlink-client = srw.fiverx_client.cli_client:client_main
-    srwlink-extract-payload = srw.fiverx_client.extract_payload:extract_payload_main
-    """,
 )
 
