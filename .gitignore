@@ -4,5 +4,7 @@
 /.project
 /.pydevproject
 /.settings
+/build
+/dist
 /venv
 /venv.py3?
