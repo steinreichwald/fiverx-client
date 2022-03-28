@@ -12,8 +12,17 @@ Options:
   --config=<config> Specify config file
   --print-request  Also print the request payload
   --api-version=<apoti_version>  Version of the ApoTI protocol [default: 01.08]
+  --quiet          Suppress all output
   -h, --help       Show this screen
   --test           Set "test" flag
+
+Exit codes:
+  5    unable to load settings
+ 10    invalid request
+ 15    problem sending request
+ 21    unexpected content type in response
+ 22    response data is not well-formed XML
+ 23    invalid XML response (XML Schema)
 
 Subcommands:
 """
@@ -58,7 +67,7 @@ def client_main(argv=sys.argv):
 
     settings = load_settings(arguments)
     if not settings:
-        return
+        return 5
     # remove some arguments which are handled by docopt ("--help") or not
     # needed anymore at this point ("--config") so we only have meaningful
     # keys in "arguments".
@@ -84,6 +93,9 @@ def run_command(cmd_module, settings, global_args, command_args):
     verify_cert = not global_args.pop('--no-cert-verification')
     api_version = global_args.pop('--api-version')
     assert (api_version in ('01.08', '01.10'))
+    quiet = global_args.pop('--quiet')
+    if quiet:
+        assert (not print_request)
     command_args = parse_command_args(cmd_module.__doc__, command_args, global_args)
 
     _s = settings
@@ -110,7 +122,7 @@ def run_command(cmd_module, settings, global_args, command_args):
         request_payload_xpath = guess_payload_xpath(soap_xml)
         is_valid = print_soap_request(soap_xml, request_payload_xpath)
         if not is_valid:
-            return
+            return 10
         print('-------------------------------------------------------------')
     ws_url = settings['url']
     hostname = settings.get('hostname')
@@ -121,33 +133,38 @@ def run_command(cmd_module, settings, global_args, command_args):
                 print(f'web service URL "{ws_url}" references specific IP address but no hostname set in config')
     elif hostname:
         url = urlparse(ws_url)
-        if hostname != url.hostname:
+        if (hostname != url.hostname) and (not quiet):
             with textcolor(TermColor.Fore.YELLOW):
                 print(f'Configured HTTP host name "{hostname}" does not match web service URL "{ws_url}"')
     try:
         response = soapclient.send_request(ws_url, soap_xml, use_chunking, verify_cert=verify_cert, hostname=hostname)
     except KeyboardInterrupt:
         # avoid ugly traceback when user cancels request with Ctrl+C
-        with textcolor(TermColor.Fore.YELLOW):
-            print('request cancelled')
-        return
+        if not quiet:
+            with textcolor(TermColor.Fore.YELLOW):
+                print('request cancelled')
+        return 0
     except RequestException as e:
-        with textcolor(TermColor.Fore.RED):
-            print(f'unable to send request to {ws_url}:')
-            print(str(e))
-        return
+        if not quiet:
+            with textcolor(TermColor.Fore.RED):
+                print(f'unable to send request to {ws_url}:')
+                print(str(e))
+        return 15
     mimetype, options = cgi.parse_header(response.headers['Content-Type'])
     if mimetype == 'text/html':
-        with textcolor(TermColor.Fore.RED):
-            print(f'HTML response: Status {response.status_code} (text/html)')
-            if not response.content:
-                content_length = response.headers.get('Content-Length')
-                print('no response body (header "Content-Length": %r)' % content_length)
-            else:
-                print(response.content)
+        if not quiet:
+            with textcolor(TermColor.Fore.RED):
+                print(f'HTML response: Status {response.status_code} (text/html)')
+                if not response.content:
+                    content_length = response.headers.get('Content-Length')
+                    print('no response body (header "Content-Length": %r)' % content_length)
+                else:
+                    print(response.content)
+        return 21
     else:
         payload_xpath = getattr(cmd_module, 'response_payload_xpath')
-        print_soap_response(response, payload_xpath)
+        rc = process_soap_response(response, payload_xpath, quiet=quiet)
+        return rc
 
 def load_settings(arguments):
     config_path = guess_config_path(arguments['--config'])
@@ -208,8 +225,8 @@ def print_soap_request(soap_xml, payload_xpath):
         print(prettified_xml)
     return is_valid
 
-def print_soap_response(response, payload_xpath):
-    if response.status_code != 200:
+def process_soap_response(response, payload_xpath, *, quiet=False):
+    if (response.status_code != 200) and not quiet:
         print('Status Code: %r' % response.status_code)
     response_body = response.text
     contains_xml = response_body.startswith('<')
@@ -220,19 +237,26 @@ def print_soap_response(response, payload_xpath):
         try:
             root = etree.fromstring(strip_xml_encoding(response_body))
         except:
-            with textcolor(TermColor.Fore.RED):
-                print(response_body)
-            return
+            if not quiet:
+                with textcolor(TermColor.Fore.RED):
+                    print(response_body)
+            return 22
         payload_xml_str = soapclient.extract_response_payload(root, payload_xpath)
         prettified_xml = prettify_xml(payload_xml_str or response_body)
         is_valid = soapclient.validate_payload(prettified_xml)
         xml_color = TermColor.Fore.GREEN if is_valid else TermColor.Fore.RED
-        with textcolor(xml_color):
-            print(prettified_xml)
+        if not quiet:
+            with textcolor(xml_color):
+                print(prettified_xml)
 
         if not is_valid:
-            error_color = (TermColor.Style.BRIGHT + xml_color) if is_colorama_available else None
-            with textcolor(error_color):
-                print('==> INVALID XML in server response!')
+            if not quiet:
+                error_color = (TermColor.Style.BRIGHT + xml_color) if is_colorama_available else None
+                with textcolor(error_color):
+                    print('==> INVALID XML in server response!')
+            return 23
+        return 0
     else:
-        print(response_body)
+        if not quiet:
+            print(response_body)
+        return 22
