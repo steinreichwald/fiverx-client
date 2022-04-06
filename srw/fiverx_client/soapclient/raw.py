@@ -12,7 +12,7 @@ __all__ = [
     'build_soap_xml'
 ]
 
-def build_soap_xml(header_params, command_args, minimized=False):
+def build_soap_xml(header_params, command_args, minimized=False, *, version):
     xml_path = command_args['<XML>']
     with open(xml_path, 'rb') as xml_fp:
         soap_xml = xml_fp.read().decode('utf8')
