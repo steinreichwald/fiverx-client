@@ -1,6 +1,13 @@
 """
 Übermittelt Rezeptdaten an das RZ.
 
+Die XML-Dateien können eMuster16-, eRezept- oder pRezept-Daten enthalten und
+werden dann in eine entsprechende <rzeLeistung>-Struktur eingebunden.
+
+Falls nur eine XML-Datei angegeben wurde und diese bereits die komplette
+<rzeLeistung>-Struktur enthält, wird nur der SOAP-Body zusätzlich generiert
+(Zugangsdaten aus der ini-Datei bleiben in diesem Fall unberücksichtigt).
+
 Usage:
     sendeRezepte <XML>...
 """
@@ -23,25 +30,40 @@ __all__ = [
 def build_soap_xml(header_params, command_args, minimized=False, *, version):
     xml_paths = command_args['<XML>']
 
-    rzLeistungInhalte = []
+    xml_contents = []
     for xml_path in xml_paths:
         source_path = Path(xml_path)
         with source_path.open('rb') as xml_fp:
             xml_bytes = xml_fp.read()
-        body_str = _eleistung_body(xml_bytes, source_path, version=version)
-        leistung_params = dict(avsId='12345', prescription_xml=body_str)
-        rzLeistungInhalt = rzLeistungInhalt_template % leistung_params
-        rzLeistungInhalte.append(rzLeistungInhalt)
+        xml_contents.append(xml_bytes)
 
-    template = payload_template.strip()
-    sendHeader = sendHeader_xml(**header_params)
-    payload_params = {
-        'sendHeader': sendHeader,
-        'rzLeistungInhalte_xml': '\n'.join(rzLeistungInhalte),
-    }
-    payload_xml = template % payload_params
+    if not is_payload_xml(xml_contents):
+        rzLeistungInhalte = []
+        for xml_bytes in xml_contents:
+            body_str = _eleistung_body(xml_bytes, source_path, version=version)
+            leistung_params = dict(avsId='12345', prescription_xml=body_str)
+            rzLeistungInhalt = rzLeistungInhalt_template % leistung_params
+            rzLeistungInhalte.append(rzLeistungInhalt)
+        template = payload_template.strip()
+        sendHeader = sendHeader_xml(**header_params)
+        payload_params = {
+            'sendHeader': sendHeader,
+            'rzLeistungInhalte_xml': '\n'.join(rzLeistungInhalte),
+        }
+        payload_xml = template % payload_params
+    else:
+        payload_xml = decode_xml_bytes(xml_contents[0])
     soap_xml = assemble_soap_xml(soap_template, payload_xml, minimized=minimized, version=version)
     return soap_xml
+
+def is_payload_xml(xml_contents):
+    if len(xml_contents) != 1:
+        return False
+    xml_bytes = xml_contents[0]
+    xml_str = strip_xml_encoding(decode_xml_bytes(xml_bytes))
+    xml_doc = etree.fromstring(xml_str)
+    tag_name = xml_doc.tag
+    return (tag_name == '{http://fiverx.de/spec/abrechnungsservice}rzeLeistung')
 
 def _eleistung_body(xml_bytes, source_path, *, version):
     xml_str = strip_xml_encoding(decode_xml_bytes(xml_bytes))
