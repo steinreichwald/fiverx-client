@@ -7,11 +7,11 @@ Testen gedacht).
 Alle Skripte laufen mit Python >= 3.6.
 
 
-fiverx-fetch-prescriptions
-==========================
+## fiverx-fetch-prescriptions
 
 Benutzung:
-$ fiverx-fetch-prescriptions [--config=fiverx.ini] [--since SINCE] export_dir
+
+    fiverx-fetch-prescriptions [--config=fiverx.ini] [--since SINCE] export_dir
 
 Dieses Skript ruft die auf dem Server gespeicherten fiverx-Daten ab und
 erstellt automatisch ein Unterverzeichnis des angebenen Export-Ordners.

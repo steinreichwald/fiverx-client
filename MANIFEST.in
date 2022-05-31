@@ -1,4 +1,5 @@
 recursive-include srw *.xsd
+include README.md
 include VERSION.txt
 include .gitignore
 
