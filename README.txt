@@ -4,7 +4,7 @@ Die Skripte dienen dazu, eingereichte Rezeptdaten vom fiverx.link-Server
 abzurufen bzw. Rezeptdaten dorthin hochzuladen (letzteres ist nur zum
 Testen gedacht).
 
-Alle Skripte sollten mit Python 3 und Python 2.7 laufen (vermutlich auch mit 2.6).
+Alle Skripte laufen mit Python >= 3.6.
 
 
 fiverx-fetch-prescriptions
