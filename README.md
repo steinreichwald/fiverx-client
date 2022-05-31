@@ -7,6 +7,11 @@ Testen gedacht).
 Alle Skripte laufen mit Python >= 3.6.
 
 
+## Installation
+
+    pip install --extra-index-url=https://www.steinreichwald.net/srw.link/dependencies/  -e .
+
+
 ## fiverx-fetch-prescriptions
 
 Benutzung:
