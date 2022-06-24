@@ -254,7 +254,11 @@ def validate_prettified_request(soap_xml, payload_xpath):
     payload_xml_str = soapclient.extract_response_payload(root, payload_xpath)
     prettified_xml = prettify_xml(payload_xml_str)
     match = re.search(r'&lt;versionNr&gt;(01\.\d{2})&lt;/versionNr&gt;', soap_xml)
-    version = match.group(1)
+    if match:
+        version = match.group(1)
+    else:
+        # This can happen for "ladeRzVersion"
+        version = '01.10'
 
     is_valid = soapclient.validate_payload(prettified_xml, version=version)
     is_valid.data['payload_xml'] = prettified_xml
