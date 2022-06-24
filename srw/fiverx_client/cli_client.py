@@ -11,7 +11,7 @@ Options:
   --no-cert-verification    disable TLS certificate verification
   --config=<config> Specify config file
   --print-request  Also print the request payload
-  --api-version=<apoti_version>  Version of the ApoTI protocol [default: 01.08]
+  --api-version=<apoti_version>  Version of the ApoTI protocol [default: 01.10]
   --quiet          Suppress all output
   --nagios         Use nagios-compatible return codes/output
   -h, --help       Show this screen
