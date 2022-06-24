@@ -145,12 +145,14 @@ def run_command(cmd_module, settings, global_args, command_args):
                 assert (nagios is not None) and (message is not None)
                 return Result(value, nagios=nagios, message=message)
         return value if (not is_result) else value.value
+    request_payload_xpath = guess_payload_xpath(soap_xml)
+    is_valid = validate_prettified_request(soap_xml, request_payload_xpath)
     if print_request:
-        request_payload_xpath = guess_payload_xpath(soap_xml)
-        is_valid = print_soap_request(soap_xml, request_payload_xpath)
-        if not is_valid:
-            return _R(10, nagios=_N.UNKNOWN, message='Invalid SOAP request')
+        print_soap_request(is_valid.payload_xml, is_valid=is_valid)
         print('-------------------------------------------------------------')
+    if not is_valid:
+        return _R(10, nagios=_N.UNKNOWN, message='Invalid SOAP request')
+
     ws_url = settings['url']
     hostname = settings.get('hostname')
     if not contains_hostname(ws_url):
@@ -247,7 +249,7 @@ def guess_payload_xpath(soap_xml):
     simple_name = fiverx_root.tag.split('}', 1)[-1]
     return '//soap:Body/fiverx:%s/*' % simple_name
 
-def print_soap_request(soap_xml, payload_xpath):
+def validate_prettified_request(soap_xml, payload_xpath):
     root = etree.fromstring(strip_xml_encoding(soap_xml))
     payload_xml_str = soapclient.extract_response_payload(root, payload_xpath)
     prettified_xml = prettify_xml(payload_xml_str)
@@ -255,10 +257,13 @@ def print_soap_request(soap_xml, payload_xpath):
     version = match.group(1)
 
     is_valid = soapclient.validate_payload(prettified_xml, version=version)
+    is_valid.data['payload_xml'] = prettified_xml
+    return is_valid
+
+def print_soap_request(payload_xml, *, is_valid):
     xml_color = TermColor.Fore.GREEN if is_valid else TermColor.Fore.RED
     with textcolor(xml_color):
-        print(prettified_xml)
-    return is_valid
+        print(payload_xml)
 
 def process_soap_response(response, payload_xpath, *, quiet=False):
     if (response.status_code != 200) and not quiet:
