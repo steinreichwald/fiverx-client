@@ -35,7 +35,7 @@ def extract_payload_main(argv=sys.argv):
     match = re.match('\{(.+)\}(.+)', fiverx_tag)
     ns_qualifier, tag_name = match.groups()
 
-    if tag_name == 'sendeRezepte':
+    if tag_name in ('sendeRezepte', 'pruefeRezept'):
         rze_leistung, rze_param_version = tuple(fiverx_root)
         fiverx_xml = rze_leistung.text
     else:
