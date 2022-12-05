@@ -12,7 +12,6 @@ Usage:
     sendeRezepte <XML>...
 """
 
-from base64 import b64encode
 from pathlib import Path
 import sys
 
@@ -20,6 +19,7 @@ from lxml import etree
 from lxml.etree import XMLSyntaxError
 
 from .baseutils import assemble_soap_xml, sendHeader_xml
+from .payload_helpers import is_eDispensierung, wrap_eDispensierung_in_fiverx_erezept
 from ..utils import decode_xml_bytes, strip_xml_encoding, textcolor, TermColor
 
 
@@ -74,25 +74,15 @@ def _eleistung_body(xml_bytes, source_path, *, version):
             print(f'{source_path.name}: invalid XML for eLeistungBody {e.msg}')
         sys.exit(1)
 
-    is_erezept = (xml_doc.tag == 'eDispensierung')
-    if not is_erezept:
+    if not is_eDispensierung(xml_doc):
         return xml_str
     if version != '01.10':
         with textcolor(TermColor.Fore.RED):
             print(f'{source_path.name}: eRezepte können nur über API-Version 1.10 verschickt werden')
         sys.exit(1)
-    erezept_id = xml_doc.attrib['RezeptId']
-    b64_edispensierung = b64encode(xml_bytes.strip()).decode('ASCII')
-    return erezept_template % {'id': erezept_id, 'data': b64_edispensierung}
+    return wrap_eDispensierung_in_fiverx_erezept(xml_doc, xml_bytes)
 
 response_payload_xpath = '//fiverx:sendeRezepteResponse/result'
-
-erezept_template = '''
-  <eRezept>
-    <eRezeptId>%(id)s</eRezeptId>
-    <eRezeptData>%(data)s</eRezeptData>
-  </eRezept>
-'''
 
 rzLeistungInhalt_template = '''
     <rzLeistungInhalt>
