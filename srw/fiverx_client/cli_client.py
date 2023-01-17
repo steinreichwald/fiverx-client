@@ -31,6 +31,7 @@ Subcommands:
 
 import cgi
 from configparser import ConfigParser
+import functools
 from pathlib import Path
 import re
 import sys
@@ -135,16 +136,7 @@ def run_command(cmd_module, settings, global_args, command_args):
     soap_builder = getattr(cmd_module, 'build_soap_xml')
     soap_xml = soap_builder(header_params, command_args, version=api_version)
 
-    def _R(value, *, nagios=None, message=None):
-        is_result = hasattr(value, 'nagios')
-        if nagios_output:
-            if is_result:
-                assert (nagios is None) and (message is None)
-                return value
-            else:
-                assert (nagios is not None) and (message is not None)
-                return Result(value, nagios=nagios, message=message)
-        return value if (not is_result) else value.value
+    _R = functools.partial(_result_or_value, use_nagios_output=nagios_output)
     request_payload_xpath = guess_payload_xpath(soap_xml)
     is_valid = validate_prettified_request(soap_xml, request_payload_xpath)
     if print_request:
@@ -202,6 +194,17 @@ def run_command(cmd_module, settings, global_args, command_args):
         payload_xpath = getattr(cmd_module, 'response_payload_xpath')
         result = process_soap_response(response, payload_xpath, quiet=quiet)
         return _R(result)
+
+def _result_or_value(value, *, use_nagios_output, nagios=None, message=None):
+    is_result = hasattr(value, 'nagios')
+    if use_nagios_output:
+        if is_result:
+            assert (nagios is None) and (message is None)
+            return value
+        else:
+            assert (nagios is not None) and (message is not None)
+            return Result(value, nagios=nagios, message=message)
+    return value if (not is_result) else value.value
 
 def load_settings(arguments):
     config_path = guess_config_path(arguments['--config'])
