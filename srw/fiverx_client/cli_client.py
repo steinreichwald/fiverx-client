@@ -163,6 +163,22 @@ def run_command(cmd_module, settings, global_args, command_args):
                 print(msg)
         if nagios_output:
             return _R(10, nagios=_N.WARNING, message=msg)
+    payload_xpath = getattr(cmd_module, 'response_payload_xpath')
+    return submit_soap_request(
+        ws_url,
+        soap_xml,
+        payload_xpath = payload_xpath,
+        use_chunking  = use_chunking,
+        verify_cert   = verify_cert,
+        hostname      = hostname,
+        nagios_output = nagios_output,
+        quiet         = quiet,
+    )
+
+
+def submit_soap_request(ws_url, soap_xml, payload_xpath, *, use_chunking=False, verify_cert=True, quiet=False, nagios_output=False, hostname=None):
+    _R = functools.partial(_result_or_value, use_nagios_output=nagios_output)
+
     try:
         response = soapclient.send_request(ws_url, soap_xml, use_chunking, verify_cert=verify_cert, hostname=hostname)
     except KeyboardInterrupt:
@@ -190,10 +206,8 @@ def run_command(cmd_module, settings, global_args, command_args):
                 else:
                     print(response.content)
         return _R(21, nagios=_N.CRITICAL, message=msg)
-    else:
-        payload_xpath = getattr(cmd_module, 'response_payload_xpath')
-        result = process_soap_response(response, payload_xpath, quiet=quiet)
-        return _R(result)
+    result = process_soap_response(response, payload_xpath, quiet=quiet)
+    return _R(result)
 
 def _result_or_value(value, *, use_nagios_output, nagios=None, message=None):
     is_result = hasattr(value, 'nagios')
@@ -302,7 +316,7 @@ def process_soap_response(response, payload_xpath, *, quiet=False):
                 with textcolor(error_color):
                     print('==> INVALID XML in server response!')
             return Result(23, nagios=_N.CRITICAL, message='invalid XML response (XML Schema)')
-        return Result(0, nagios=_N.OK, message='OK')
+        return Result(0, nagios=_N.OK, message='OK', document=is_valid.validated_document)
     else:
         if not quiet:
             print(response_body)
