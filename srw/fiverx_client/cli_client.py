@@ -289,7 +289,7 @@ def print_soap_request(payload_xml, *, is_valid):
 def process_soap_response(response, payload_xpath, *, quiet=False):
     if (response.status_code != 200) and not quiet:
         print('Status Code: %r' % response.status_code)
-    response_body = response.text
+    response_body = response.text.strip()
     contains_xml = response_body.startswith('<')
     if contains_xml:
         # If the server response starts with an XML encoding declaration this
