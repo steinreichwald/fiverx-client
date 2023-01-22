@@ -27,11 +27,17 @@ __all__ = [
     'build_soap_xml'
 ]
 
-def build_soap_xml(header_params, command_args, minimized=False, *, version):
+def build_soap_xml(header_params, command_args, minimized=False, *, version, avs_ids=None):
     xml_paths = command_args['<XML>']
+    if avs_ids:
+        assert len(avs_ids) == len(xml_paths)
+    elif len(xml_paths) == 1:
+        avs_ids = ['12345']
+    else:
+        avs_ids = [str(i) * 5 for i in range(len(xml_paths))]
 
     xml_contents = []
-    for xml_path in xml_paths:
+    for xml_path, avs_id in zip(xml_paths, avs_ids):
         source_path = Path(xml_path)
         with source_path.open('rb') as xml_fp:
             xml_bytes = xml_fp.read()
@@ -39,9 +45,9 @@ def build_soap_xml(header_params, command_args, minimized=False, *, version):
 
     if not is_payload_xml(xml_contents):
         rzLeistungInhalte = []
-        for xml_bytes in xml_contents:
+        for xml_bytes, avs_id in zip(xml_contents, avs_ids):
             body_str = _eleistung_body(xml_bytes, source_path, version=version)
-            leistung_params = dict(avsId='12345', prescription_xml=body_str)
+            leistung_params = dict(avsId=avs_id, prescription_xml=body_str)
             rzLeistungInhalt = rzLeistungInhalt_template % leistung_params
             rzLeistungInhalte.append(rzLeistungInhalt)
         template = payload_template.strip()
