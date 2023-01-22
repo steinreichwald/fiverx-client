@@ -116,20 +116,10 @@ def run_command(cmd_module, settings, global_args, command_args):
         quiet = True
     command_args = parse_command_args(cmd_module.__doc__, command_args, global_args)
 
-    _s = settings
-    soap_user = _s.get('soap_user')
-    apo_ik = _s.get('soap_apoik')
-    assert (soap_user or apo_ik)
-    if (not soap_user) and apo_ik:
-        assert re.match('^\d{9}$', apo_ik)
-        soap_user = apo_ik
-    elif (not apo_ik) and soap_user:
-        assert re.match('^\d{9}$', soap_user)
-        apo_ik = soap_user
-
+    soap_user, apo_ik = get_soap_user_and_apo_ik(settings)
     header_params = {
         'user': soap_user,
-        'password': _s['soap_password'],
+        'password': settings['soap_password'],
         'apoik': apo_ik,
         'test': 'true' if is_test_request else 'false',
     }
@@ -251,6 +241,18 @@ def parse_config(config_path):
     config.read([config_path])
     settings = dict(config.items('srw.link'))
     return settings
+
+def get_soap_user_and_apo_ik(settings):
+    soap_user = settings.get('soap_user')
+    apo_ik = settings.get('soap_apoik')
+    assert (soap_user or apo_ik)
+    if (not soap_user) and apo_ik:
+        assert re.match('^\d{9}$', apo_ik)
+        soap_user = apo_ik
+    elif (not apo_ik) and soap_user:
+        assert re.match('^\d{9}$', soap_user)
+        apo_ik = soap_user
+    return (soap_user, apo_ik)
 
 def contains_hostname(url_str):
     url = urlparse(url_str)
