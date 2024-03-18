@@ -43,7 +43,7 @@ def extract_payload_main(argv=sys.argv):
         fiverx_container, = tuple(fiverx_root)
         fiverx_xml = fiverx_container.text
 
-    result = validate_payload(fiverx_xml)
+    result = validate_payload(fiverx_xml, version='01.10')
     if not result:
         xml_color = TermColor.Fore.RED
         error_color = (TermColor.Style.BRIGHT + xml_color) if is_colorama_available else None
