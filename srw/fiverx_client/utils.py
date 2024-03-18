@@ -7,6 +7,7 @@ from soapfish.lib.attribute_dict import AttrDict
 
 
 __all__ = [
+    'EREZEPT',
     'MUSTER16',
     'decode_xml_bytes',
     'parse_command_args',
@@ -19,6 +20,7 @@ __all__ = [
 
 PREZEPT = 'prezept'
 MUSTER16 = 'muster16'
+EREZEPT = 'erezept'
 
 
 def parse_command_args(doc_str, command_args, global_args):

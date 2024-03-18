@@ -3,12 +3,13 @@ Fragt den Status von zuvor eingelieferten Rezepten ab.
 
 Usage:
     ladeStatusRezept lieferung <LIEFERID> [<STATUS>]
+    ladeStatusRezept erezept <EREZEPTID>
     ladeStatusRezept muster16 <MUSTER16ID>
     ladeStatusRezept prezept <TRANSAKTIONSNUMMER> <JAHR>
 """
 
 from .baseutils import assemble_soap_xml, sendHeader_xml
-from ..utils import MUSTER16, PREZEPT
+from ..utils import EREZEPT, MUSTER16, PREZEPT
 
 
 __all__ = [
@@ -18,10 +19,14 @@ __all__ = [
 def build_soap_xml(header_params, command_args, minimized=False, *, version):
     per_submission_id = bool(command_args['lieferung'])
     query_muster16 = bool(command_args['muster16'])
+    query_erezept = bool(command_args['erezept'])
     query_prezept = bool(command_args['prezept'])
     if per_submission_id:
         submission_id = command_args['<LIEFERID>']
         query_xml = query_perLieferID(submission_id, 'ALLE')
+    elif query_erezept:
+        erezept_id = command_args['<EREZEPTID>']
+        query_xml = query_perRezeptID(EREZEPT, erezept_id)
     elif query_muster16:
         muster16_id = command_args['<MUSTER16ID>']
         query_xml = query_perRezeptID(MUSTER16, muster16_id)
@@ -50,6 +55,8 @@ def query_perRezeptID(ptype, document_id, year=None):
                 <transaktionsNummer>%s</transaktionsNummer>
                 <erstellungsJahr>%s</erstellungsJahr>
         ''' % (document_id, year)
+    elif ptype == EREZEPT:
+        parameter_xml = f'<eRezeptId>{document_id}</eRezeptId>'
     else:
         parameter_xml = '<muster16Id>%s</muster16Id>' % document_id
     return '<perRezeptID>%s</perRezeptID>' % parameter_xml
